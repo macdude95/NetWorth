@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Net Worth Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117; color: #c9d1d9; padding: 12px;
+      min-height: 100vh;
+    }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; color: #f0f6fc; }
+    .subtitle { font-size: 0.8rem; color: #8b949e; margin-bottom: 16px; }
+    .section { margin-bottom: 28px; }
+    .section h2 { font-size: 1.05rem; color: #f0f6fc; margin-bottom: 10px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }
+    .chart-wrapper { position: relative; width: 100%; background: #161b22; border-radius: 8px; padding: 12px; }
+    canvas { width: 100% !important; max-height: 350px; }
+    .timeframe-bar {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;
+    }
+    .timeframe-bar button {
+      background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+      padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .timeframe-bar button.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+    .timeframe-bar button:hover { background: #30363d; }
+    .stats-row {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+    }
+    .stat-box {
+      flex: 1 1 120px; background: #161b22; border-radius: 8px;
+      padding: 10px 12px; text-align: center; min-width: 110px;
+    }
+    .stat-box .label { font-size: 0.7rem; color: #8b949e; text-transform: uppercase; }
+    .stat-box .value { font-size: 1.2rem; font-weight: 700; color: #f0f6fc; }
+    .stat-box .delta { font-size: 0.7rem; margin-top: 2px; }
+    .delta.pos { color: #3fb950; } .delta.neg { color: #f85149; }
+    /* Password gate */
+    #gate {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 70vh;
+    }
+    #gate form { display: flex; flex-direction: column; gap: 10px; align-items: center; max-width: 280px; width: 100%; }
+    #gate input[type="password"] {
+      width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #30363d;
+      background: #0d1117; color: #f0f6fc; font-size: 1rem; outline: none;
+    }
+    #gate input[type="password"]:focus { border-color: #1f6feb; }
+    #gate button {
+      width: 100%; padding: 10px; background: #238636; color: #fff;
+      border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
+    }
+    #gate .error { color: #f85149; font-size: 0.85rem; margin-top: 4px; min-height: 20px; }
+    #dashboard { display: none; }
+    @media (max-width: 480px) {
+      body { padding: 8px; }
+      .stats-row { gap: 6px; }
+      .stat-box { flex: 1 1 90px; min-width: 80px; padding: 8px; }
+      .stat-box .value { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div id="gate">
+  <form onsubmit="return checkPassword()">
+    <h1 style="text-align:center;margin-bottom:8px;">🔒 Net Worth</h1>
+    <input type="password" id="pw-input" placeholder="Enter password" autofocus>
+    <button type="submit">Unlock</button>
+    <div class="error" id="pw-error"></div>
+  </form>
+</div>
+
+<div id="dashboard" class="container">
+  <h1>💰 Net Worth Dashboard</h1>
+  <div class="subtitle" id="dateRange"></div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="section">
+    <h2>Net Worth Over Time</h2>
+    <div class="timeframe-bar" id="timeframeBar"></div>
+    <div class="chart-wrapper"><canvas id="chartNetWorth"></canvas></div>
+  </div>
+
+  <div class="section">
+    <h2>Total vs Excluding Home Equity</h2>
+    <div class="timeframe-bar" id="timeframeBarEx"></div>
+    <div class="chart-wrapper"><canvas id="chartExHousing"></canvas></div>
+  </div>
+
+  <div class="section" id="projectionSection">
+    <h2>Projections</h2>
+    <div class="timeframe-bar" id="timeframeBarProj"></div>
+    <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
+  </div>
+
+  <div class="section">
+    <h2>Retirement vs Non-Retirement</h2>
+    <div class="timeframe-bar" id="timeframeBarStacked"></div>
+    <div class="chart-wrapper"><canvas id="chartStacked"></canvas></div>
+  </div>
+</div>
+
+<script>
+// --- Embedded data (injected by generate.py) ---
+const DATA = __CHART_DATA_JSON__;
+
+// --- Password gate ---
+function sha256(str) {
+  const encoder = new TextEncoder();
+  return crypto.subtle.digest('SHA-256', encoder.encode(str))
+    .then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join(''));
+}
+
+async function checkPassword() {
+  const input = document.getElementById('pw-input').value;
+  const hash = await sha256(DATA.password.salt + input);
+  const valid = (hash === DATA.password.hash);
+  if (valid) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    initDashboard();
+  } else {
+    document.getElementById('pw-error').textContent = 'Wrong password';
+  }
+  return false;
+}
+
+// --- Charts ---
+const CHART_COLORS = {
+  total: '#1f6feb',
+  exHousing: '#3fb950',
+  retirement: '#d29922',
+  nonRetirement: '#1f6feb',
+  projectionP50: '#a5d6ff',
+  projectionP10: 'rgba(165,214,255,0.15)',
+  projectionP90: 'rgba(165,214,255,0.15)',
+  grid: 'rgba(201,209,217,0.1)',
+  tick: '#8b949e',
+};
+
+function formatCurrency(n) {
+  if (n == null || isNaN(n)) return 'N/A';
+  const abs = Math.abs(n);
+  if (abs >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (abs >= 1000) return (n / 1000).toFixed(0) + 'K';
+  return n.toFixed(0);
+}
+
+function formatFull(n) {
+  if (n == null || isNaN(n)) return 'N/A';
+  return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// --- Timeframe filtering ---
+const TIMEFRAMES = { '1M': 1, '3M': 3, 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
+
+function filterByTimeframe(dates, series, tf) {
+  if (tf === 'all') return { dates, series };
+  const lastDate = new Date(dates[dates.length - 1]);
+  let cutoff;
+  if (tf === 'ytd') {
+    cutoff = new Date(lastDate.getFullYear(), 0, 1);
+  } else {
+    cutoff = new Date(lastDate);
+    cutoff.setMonth(cutoff.getMonth() - tf);
+  }
+  const indices = [];
+  dates.forEach((d, i) => {
+    if (new Date(d) >= cutoff || dates.length - i <= 2) indices.push(i);
+  });
+  const fDates = indices.map(i => dates[i]);
+  const fSeries = series.map(s => indices.map(i => s[i]));
+  return { dates: fDates, series: fSeries };
+}
+
+let currentCharts = {};
+let activeTimeframes = { netWorth: 'All', exHousing: 'All', projections: 'All', stacked: 'All' };
+
+function destroyChart(key) {
+  if (currentCharts[key]) { currentCharts[key].destroy(); currentCharts[key] = null; }
+}
+
+function makeTimeframeBar(containerId, chartKey, redrawFn) {
+  const bar = document.getElementById(containerId);
+  bar.innerHTML = '';
+  Object.keys(TIMEFRAMES).forEach(label => {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.className = activeTimeframes[chartKey] === label ? 'active' : '';
+    btn.onclick = () => {
+      activeTimeframes[chartKey] = label;
+      [...bar.children].forEach(b => b.className = '');
+      btn.className = 'active';
+      redrawFn();
+    };
+    bar.appendChild(btn);
+  });
+}
+
+// --- Main dashboard init ---
+function initDashboard() {
+  const s = DATA.series;
+  const p = DATA.projections;
+
+  // Stats row
+  const lastIdx = s.dates.length - 1;
+  const prevIdx = Math.max(0, lastIdx - 1);
+  const nw = s.net_worth_total[lastIdx];
+  const nwPrev = s.net_worth_total[prevIdx];
+  const delta = nw - nwPrev;
+  const deltaPct = nwPrev > 0 ? (delta / nwPrev * 100) : 0;
+  const nwEx = s.net_worth_ex_housing[lastIdx];
+  const ret = s.retirement[lastIdx];
+
+  document.getElementById('dateRange').textContent = 'Latest: ' + s.dates[lastIdx] + ' · ' + s.dates.length + ' snapshots · ' + s.dates[0] + ' → ' + s.dates[lastIdx];
+
+  const stats = [
+    { label: 'Net Worth', value: '$' + formatCurrency(nw), delta: (delta>=0?'+':'') + '$'+formatCurrency(Math.abs(delta)) + ' ('+(deltaPct>=0?'+':'')+deltaPct.toFixed(1)+'%)', pos: delta>=0 },
+    { label: 'Excl. Home', value: '$' + formatCurrency(nwEx), delta: '', pos: true },
+    { label: 'Retirement', value: '$' + formatCurrency(ret), delta: '', pos: true },
+    { label: 'Snapshots', value: s.dates.length, delta: '', pos: true },
+  ];
+  document.getElementById('statsRow').innerHTML = stats.map(st =>
+    '<div class="stat-box">' +
+      '<div class="label">' + st.label + '</div>' +
+      '<div class="value">' + st.value + '</div>' +
+      (st.delta ? '<div class="delta ' + (st.pos ? 'pos' : 'neg') + '">' + st.delta + '</div>' : '') +
+    '</div>').join('');
+
+  const commonOpts = function(title) {
+    return {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+        y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: function(v) { return formatCurrency(v); } }, grid: { color: CHART_COLORS.grid } }
+      },
+      interaction: { intersect: false, mode: 'index' },
+    };
+  };
+
+  function drawNetWorth() {
+    destroyChart('netWorth');
+    const tf = activeTimeframes.netWorth;
+    const tfM = TIMEFRAMES[tf];
+    const f = filterByTimeframe(s.dates, [s.net_worth_total], tfM);
+    const ctx = document.getElementById('chartNetWorth').getContext('2d');
+    currentCharts.netWorth = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: f.dates,
+        datasets: [
+          { label: 'Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2 },
+        ]
+      },
+      options: commonOpts('Net Worth'),
+    });
+  }
+
+  function drawExHousing() {
+    destroyChart('exHousing');
+    const tf = activeTimeframes.exHousing;
+    const tfM = TIMEFRAMES[tf];
+    const f = filterByTimeframe(s.dates, [s.net_worth_total, s.net_worth_ex_housing], tfM);
+    const ctx = document.getElementById('chartExHousing').getContext('2d');
+    currentCharts.exHousing = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: f.dates,
+        datasets: [
+          { label: 'Total Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+          { label: 'Excluding Home Equity', data: f.series[1], borderColor: CHART_COLORS.exHousing, backgroundColor: 'rgba(63,185,80,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [5,3] },
+        ]
+      },
+      options: commonOpts('Total vs Ex-Housing'),
+    });
+  }
+
+  function drawProjections() {
+    destroyChart('projections');
+    if (!p) {
+      document.getElementById('projectionSection').style.display = 'none';
+      return;
+    }
+    document.getElementById('projectionSection').style.display = 'block';
+
+    // Combine actuals + projection dates
+    const allDates = s.dates.concat(p.dates.slice(1));
+    // Pad actual series to projection length with null fill
+    const actualPadded = s.net_worth_total.concat(new Array(p.dates.length - 1).fill(null));
+    const projP50 = new Array(s.dates.length).fill(null).concat(p.p50.slice(1));
+    const projP10 = new Array(s.dates.length).fill(null).concat(p.p10.slice(1));
+    const projP90 = new Array(s.dates.length).fill(null).concat(p.p90.slice(1));
+
+    const tf = activeTimeframes.projections;
+    const tfM = TIMEFRAMES[tf];
+    const f = filterByTimeframe(allDates, [actualPadded, projP50, projP10, projP90], tfM);
+
+    const ctx = document.getElementById('chartProjections').getContext('2d');
+    currentCharts.projections = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: f.dates,
+        datasets: [
+          { label: 'Actual Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+          { label: 'Projected (p50)', data: f.series[1], borderColor: CHART_COLORS.projectionP50, borderDash: [4,2], fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+          { label: 'p10-p90 Range', data: f.series[2], borderColor: 'transparent', backgroundColor: CHART_COLORS.projectionP10, fill: '+1', tension: 0.3, pointRadius: 0 },
+          { label: '', data: f.series[3], borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+        ]
+      },
+      options: commonOpts('Projected Net Worth'),
+    });
+  }
+
+  function drawStacked() {
+    destroyChart('stacked');
+    const tf = activeTimeframes.stacked;
+    const tfM = TIMEFRAMES[tf];
+    const f = filterByTimeframe(s.dates, [s.retirement, s.non_retirement], tfM);
+    const ctx = document.getElementById('chartStacked').getContext('2d');
+    currentCharts.stacked = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: f.dates,
+        datasets: [
+          { label: 'Non-Retirement', data: f.series[1], backgroundColor: CHART_COLORS.nonRetirement, borderRadius: 2 },
+          { label: 'Retirement', data: f.series[0], backgroundColor: CHART_COLORS.retirement, borderRadius: 2 },
+        ]
+      },
+      options: {
+        ...commonOpts('Retirement vs Non-Retirement'),
+        scales: {
+          x: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+          y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, callback: function(v) { return formatCurrency(v); } }, grid: { color: CHART_COLORS.grid } }
+        }
+      },
+    });
+  }
+
+  // Build timeframe bars
+  makeTimeframeBar('timeframeBar', 'netWorth', drawNetWorth);
+  makeTimeframeBar('timeframeBarEx', 'exHousing', drawExHousing);
+  makeTimeframeBar('timeframeBarProj', 'projections', drawProjections);
+  makeTimeframeBar('timeframeBarStacked', 'stacked', drawStacked);
+
+  // Initial draw
+  drawNetWorth();
+  drawExHousing();
+  drawProjections();
+  drawStacked();
+}
+</script>
+</body>
+</html>
