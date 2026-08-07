@@ -57,11 +57,31 @@
     }
     #gate .error { color: #f85149; font-size: 0.85rem; margin-top: 4px; min-height: 20px; }
     #dashboard { display: none; }
+    /* Projection controls */
+    .proj-controls {
+      background: #161b22; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    }
+    .proj-controls label {
+      display: flex; flex-direction: column; gap: 3px; font-size: 0.72rem; color: #8b949e;
+      text-transform: uppercase; min-width: 100px; flex: 1 1 130px;
+    }
+    .proj-controls input { 
+      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      padding: 6px 8px; color: #f0f6fc; font-size: 0.85rem; width: 100%;
+    }
+    .proj-controls input:focus { border-color: #1f6feb; outline: none; }
+    .proj-controls button {
+      background: #238636; color: #fff; border: none; border-radius: 6px;
+      padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
+    }
     @media (max-width: 480px) {
       body { padding: 8px; }
       .stats-row { gap: 6px; }
       .stat-box { flex: 1 1 90px; min-width: 80px; padding: 8px; }
       .stat-box .value { font-size: 1rem; }
+      .proj-controls { gap: 8px; }
+      .proj-controls label { min-width: 80px; flex: 1 1 100px; }
     }
   </style>
 </head>
@@ -81,24 +101,27 @@
 
   <div class="stats-row" id="statsRow"></div>
 
+  <!-- CHART 1: Net Worth (total + ex-housing on one chart) -->
   <div class="section">
-    <h2>Net Worth Over Time</h2>
-    <div class="timeframe-bar" id="timeframeBar"></div>
+    <h2>Net Worth</h2>
+    <div class="timeframe-bar" id="timeframeBarNW"></div>
     <div class="chart-wrapper"><canvas id="chartNetWorth"></canvas></div>
   </div>
 
-  <div class="section">
-    <h2>Total vs Excluding Home Equity</h2>
-    <div class="timeframe-bar" id="timeframeBarEx"></div>
-    <div class="chart-wrapper"><canvas id="chartExHousing"></canvas></div>
-  </div>
-
+  <!-- CHART 2: Projections -->
   <div class="section" id="projectionSection">
     <h2>Projections</h2>
+    <div class="proj-controls" id="projControls">
+      <label>Annual cost of living ($) <input type="number" id="projExpenses" value="96000" step="1000"></label>
+      <label>Annual income ($) <input type="number" id="projIncome" value="200000" step="1000"></label>
+      <label>Investment growth (%/yr) <input type="number" id="projGrowth" value="7" step="0.5" min="0" max="30"></label>
+      <button onclick="recalcProjections()">Update</button>
+    </div>
     <div class="timeframe-bar" id="timeframeBarProj"></div>
     <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
   </div>
 
+  <!-- CHART 3: Retirement vs Non-Retirement -->
   <div class="section">
     <h2>Retirement vs Non-Retirement</h2>
     <div class="timeframe-bar" id="timeframeBarStacked"></div>
@@ -107,7 +130,6 @@
 </div>
 
 <script>
-// --- Embedded data (injected by generate.py) ---
 const DATA = __CHART_DATA_JSON__;
 
 // --- Password gate ---
@@ -120,31 +142,28 @@ function sha256(str) {
 async function checkPassword() {
   const input = document.getElementById('pw-input').value;
   const hash = await sha256(DATA.password.salt + input);
-  const valid = (hash === DATA.password.hash);
-  if (valid) {
+  if (hash === DATA.password.hash) {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     initDashboard();
   } else {
     document.getElementById('pw-error').textContent = 'Wrong password';
   }
-  return false;
 }
 
-// --- Charts ---
-const CHART_COLORS = {
+// --- Chart colors ---
+const CC = {
   total: '#1f6feb',
   exHousing: '#3fb950',
   retirement: '#d29922',
   nonRetirement: '#1f6feb',
-  projectionP50: '#a5d6ff',
-  projectionP10: 'rgba(165,214,255,0.15)',
-  projectionP90: 'rgba(165,214,255,0.15)',
+  projP50: '#a5d6ff',
+  projBand: 'rgba(165,214,255,0.15)',
   grid: 'rgba(201,209,217,0.1)',
   tick: '#8b949e',
 };
 
-function formatCurrency(n) {
+function fmtShort(n) {
   if (n == null || isNaN(n)) return 'N/A';
   const abs = Math.abs(n);
   if (abs >= 1000000) return (n / 1000000).toFixed(1) + 'M';
@@ -152,16 +171,12 @@ function formatCurrency(n) {
   return n.toFixed(0);
 }
 
-function formatFull(n) {
-  if (n == null || isNaN(n)) return 'N/A';
-  return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
+// --- Timeframes ---
+const TF_MAIN = { 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
+const TF_PROJ = { '5Y': 60, '10Y': 120, '25Y': 300, 'All': 'all' };
 
-// --- Timeframe filtering ---
-const TIMEFRAMES = { '1M': 1, '3M': 3, 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
-
-function filterByTimeframe(dates, series, tf) {
-  if (tf === 'all') return { dates, series };
+function filterDates(dates, seriesArr, tf) {
+  if (tf === 'all') return { dates, series: seriesArr };
   const lastDate = new Date(dates[dates.length - 1]);
   let cutoff;
   if (tf === 'ytd') {
@@ -170,45 +185,147 @@ function filterByTimeframe(dates, series, tf) {
     cutoff = new Date(lastDate);
     cutoff.setMonth(cutoff.getMonth() - tf);
   }
-  const indices = [];
-  dates.forEach((d, i) => {
-    if (new Date(d) >= cutoff || dates.length - i <= 2) indices.push(i);
-  });
-  const fDates = indices.map(i => dates[i]);
-  const fSeries = series.map(s => indices.map(i => s[i]));
-  return { dates: fDates, series: fSeries };
+  const idx = [];
+  dates.forEach((d, i) => { if (new Date(d) >= cutoff || i >= dates.length - 2) idx.push(i); });
+  return { dates: idx.map(i => dates[i]), series: seriesArr.map(s => idx.map(i => s[i])) };
 }
 
-let currentCharts = {};
-let activeTimeframes = { netWorth: 'All', exHousing: 'All', projections: 'All', stacked: 'All' };
+let charts = {};
+function killChart(k) { if (charts[k]) { charts[k].destroy(); charts[k] = null; } }
 
-function destroyChart(key) {
-  if (currentCharts[key]) { currentCharts[key].destroy(); currentCharts[key] = null; }
-}
+let tf = { nw: 'All', proj: '5Y', stacked: 'All' };
 
-function makeTimeframeBar(containerId, chartKey, redrawFn) {
-  const bar = document.getElementById(containerId);
+function makeTFBar(parentId, key, labels, redraw) {
+  const bar = document.getElementById(parentId);
   bar.innerHTML = '';
-  Object.keys(TIMEFRAMES).forEach(label => {
+  Object.keys(labels).forEach(l => {
     const btn = document.createElement('button');
-    btn.textContent = label;
-    btn.className = activeTimeframes[chartKey] === label ? 'active' : '';
-    btn.onclick = () => {
-      activeTimeframes[chartKey] = label;
-      [...bar.children].forEach(b => b.className = '');
-      btn.className = 'active';
-      redrawFn();
-    };
+    btn.textContent = l;
+    btn.className = tf[key] === l ? 'active' : '';
+    btn.onclick = () => { tf[key] = l; bar.querySelectorAll('button').forEach(b => b.className = ''); btn.className = 'active'; redraw(); };
     bar.appendChild(btn);
   });
 }
 
-// --- Main dashboard init ---
+function baseOpts() {
+  return {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
+    scales: {
+      x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+      y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: CC.grid } }
+    },
+    interaction: { intersect: false, mode: 'index' },
+  };
+}
+
+// --- Projection engine (client-side recalculation) ---
+let projCache = null;
+
+function calcProjections(expenses, income, growthPct) {
+  const s = DATA.series;
+  const snapshots = DATA.series;
+  // Get last snapshot values
+  const lastIdx = snapshots.dates.length - 1;
+  const totalNW = snapshots.net_worth_total[lastIdx];
+  const retirementVal = snapshots.retirement[lastIdx];
+  const nonRetVal = snapshots.non_retirement[lastIdx];
+
+  const horizonMonths = 25 * 12; // fixed 25yr horizon
+  const r = growthPct / 100;
+  const monthlyGrowth = r / 12;
+  const netSavings = (income - expenses) / 12; // monthly net savings
+
+  // Simple: annual net savings added to non-retirement; everything compounds
+  const p50 = [];
+  let nw = totalNW;
+  for (let m = 0; m <= horizonMonths; m++) {
+    p50.push(Math.round(nw));
+    nw = nw * (1 + monthlyGrowth) + Math.max(0, netSavings);
+  }
+
+  // Monte Carlo bands
+  const vol = 0.15 / Math.sqrt(12); // 15% annual vol
+  const runs = 200;
+  const paths = [];
+  for (let rn = 0; rn < runs; rn++) {
+    const path = [];
+    let val = totalNW;
+    for (let m = 0; m <= horizonMonths; m++) {
+      path.push(Math.round(val));
+      const shock = randn_bm() * vol;
+      val = val * Math.exp((monthlyGrowth - 0.5 * vol * vol) + shock) + Math.max(0, netSavings);
+    }
+    paths.push(path);
+  }
+
+  const p10 = [], p90 = [];
+  for (let m = 0; m <= horizonMonths; m++) {
+    const vals = paths.map(p => p[m]).sort((a, b) => a - b);
+    p10.push(vals[Math.floor(runs * 0.10)]);
+    p90.push(vals[Math.floor(runs * 0.90)]);
+  }
+
+  // Build dates
+  const lastDate = new Date(snapshots.dates[lastIdx]);
+  const projDates = [];
+  for (let m = 1; m <= horizonMonths; m++) {
+    const d = new Date(lastDate);
+    d.setMonth(d.getMonth() + m);
+    projDates.push(d.toISOString().slice(0, 10));
+  }
+
+  const allDates = snapshots.dates.concat(projDates);
+  const actualPadded = snapshots.net_worth_total.concat(new Array(horizonMonths).fill(null));
+  const p50Padded = new Array(snapshots.dates.length).fill(null).concat(p50.slice(1));
+  const p10Padded = new Array(snapshots.dates.length).fill(null).concat(p10.slice(1));
+  const p90Padded = new Array(snapshots.dates.length).fill(null).concat(p90.slice(1));
+
+  return { allDates, actualPadded, p50Padded, p10Padded, p90Padded, p50, horizonMonths };
+}
+
+function drawProjectionsFn() {
+  killChart('projections');
+  if (!projCache) recalcProjections();
+  const p = projCache;
+  const f = filterDates(p.allDates, [p.actualPadded, p.p50Padded, p.p10Padded, p.p90Padded], TF_PROJ[tf.proj]);
+
+  charts.projections = new Chart(document.getElementById('chartProjections').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: f.dates,
+      datasets: [
+        { label: 'Actual', data: f.series[0], borderColor: CC.total, fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+        { label: 'Projected (p50)', data: f.series[1], borderColor: CC.projP50, borderDash: [4,2], fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+        { label: 'p10–p90', data: f.series[2], borderColor: 'transparent', backgroundColor: CC.projBand, fill: '+1', tension: 0.3, pointRadius: 0 },
+        { label: '', data: f.series[3], borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+      ]
+    },
+    options: baseOpts(),
+  });
+}
+
+function recalcProjections() {
+  const expenses = parseFloat(document.getElementById('projExpenses').value) || 96000;
+  const income = parseFloat(document.getElementById('projIncome').value) || 200000;
+  const growth = parseFloat(document.getElementById('projGrowth').value) || 7;
+  projCache = calcProjections(expenses, income, growth);
+  drawProjectionsFn();
+}
+
+// Normal random (Box-Muller)
+function randn_bm() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+// --- Main ---
 function initDashboard() {
   const s = DATA.series;
-  const p = DATA.projections;
 
-  // Stats row
+  // Stats
   const lastIdx = s.dates.length - 1;
   const prevIdx = Math.max(0, lastIdx - 1);
   const nw = s.net_worth_total[lastIdx];
@@ -218,142 +335,66 @@ function initDashboard() {
   const nwEx = s.net_worth_ex_housing[lastIdx];
   const ret = s.retirement[lastIdx];
 
-  document.getElementById('dateRange').textContent = 'Latest: ' + s.dates[lastIdx] + ' · ' + s.dates.length + ' snapshots · ' + s.dates[0] + ' → ' + s.dates[lastIdx];
+  document.getElementById('dateRange').textContent = `Latest: ${s.dates[lastIdx]} · ${s.dates.length} snapshots · ${s.dates[0]} → ${s.dates[lastIdx]}`;
+  document.getElementById('statsRow').innerHTML = [
+    { l: 'Net Worth', v: '$'+fmtShort(nw), d: `${delta>=0?'+':''}$${fmtShort(Math.abs(delta))} (${deltaPct>=0?'+':''}${deltaPct.toFixed(1)}%)`, pos: delta>=0 },
+    { l: 'Excl. Home', v: '$'+fmtShort(nwEx), d: '', pos: true },
+    { l: 'Retirement', v: '$'+fmtShort(ret), d: '', pos: true },
+    { l: 'Snapshots', v: s.dates.length, d: '', pos: true },
+  ].map(st => `<div class="stat-box"><div class="label">${st.l}</div><div class="value">${st.v}</div>${st.d ? `<div class="delta ${st.pos?'pos':'neg'}">${st.d}</div>` : ''}</div>`).join('');
 
-  const stats = [
-    { label: 'Net Worth', value: '$' + formatCurrency(nw), delta: (delta>=0?'+':'') + '$'+formatCurrency(Math.abs(delta)) + ' ('+(deltaPct>=0?'+':'')+deltaPct.toFixed(1)+'%)', pos: delta>=0 },
-    { label: 'Excl. Home', value: '$' + formatCurrency(nwEx), delta: '', pos: true },
-    { label: 'Retirement', value: '$' + formatCurrency(ret), delta: '', pos: true },
-    { label: 'Snapshots', value: s.dates.length, delta: '', pos: true },
-  ];
-  document.getElementById('statsRow').innerHTML = stats.map(st =>
-    '<div class="stat-box">' +
-      '<div class="label">' + st.label + '</div>' +
-      '<div class="value">' + st.value + '</div>' +
-      (st.delta ? '<div class="delta ' + (st.pos ? 'pos' : 'neg') + '">' + st.delta + '</div>' : '') +
-    '</div>').join('');
+  // CHART 1: Net Worth (total + ex-housing, one chart)
+  makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
+  drawNW();
 
-  const commonOpts = function(title) {
-    return {
-      responsive: true, maintainAspectRatio: true,
-      plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
-      scales: {
-        x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
-        y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: function(v) { return formatCurrency(v); } }, grid: { color: CHART_COLORS.grid } }
-      },
-      interaction: { intersect: false, mode: 'index' },
-    };
-  };
+  // CHART 2: Projections
+  document.getElementById('projExpenses').value = '96000';
+  document.getElementById('projIncome').value = '200000';
+  document.getElementById('projGrowth').value = '7';
+  makeTFBar('timeframeBarProj', 'proj', TF_PROJ, drawProjectionsFn);
+  recalcProjections();
 
-  function drawNetWorth() {
-    destroyChart('netWorth');
-    const tf = activeTimeframes.netWorth;
-    const tfM = TIMEFRAMES[tf];
-    const f = filterByTimeframe(s.dates, [s.net_worth_total], tfM);
-    const ctx = document.getElementById('chartNetWorth').getContext('2d');
-    currentCharts.netWorth = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: f.dates,
-        datasets: [
-          { label: 'Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2 },
-        ]
-      },
-      options: commonOpts('Net Worth'),
-    });
-  }
-
-  function drawExHousing() {
-    destroyChart('exHousing');
-    const tf = activeTimeframes.exHousing;
-    const tfM = TIMEFRAMES[tf];
-    const f = filterByTimeframe(s.dates, [s.net_worth_total, s.net_worth_ex_housing], tfM);
-    const ctx = document.getElementById('chartExHousing').getContext('2d');
-    currentCharts.exHousing = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: f.dates,
-        datasets: [
-          { label: 'Total Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-          { label: 'Excluding Home Equity', data: f.series[1], borderColor: CHART_COLORS.exHousing, backgroundColor: 'rgba(63,185,80,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [5,3] },
-        ]
-      },
-      options: commonOpts('Total vs Ex-Housing'),
-    });
-  }
-
-  function drawProjections() {
-    destroyChart('projections');
-    if (!p) {
-      document.getElementById('projectionSection').style.display = 'none';
-      return;
-    }
-    document.getElementById('projectionSection').style.display = 'block';
-
-    // Combine actuals + projection dates
-    const allDates = s.dates.concat(p.dates.slice(1));
-    // Pad actual series to projection length with null fill
-    const actualPadded = s.net_worth_total.concat(new Array(p.dates.length - 1).fill(null));
-    const projP50 = new Array(s.dates.length).fill(null).concat(p.p50.slice(1));
-    const projP10 = new Array(s.dates.length).fill(null).concat(p.p10.slice(1));
-    const projP90 = new Array(s.dates.length).fill(null).concat(p.p90.slice(1));
-
-    const tf = activeTimeframes.projections;
-    const tfM = TIMEFRAMES[tf];
-    const f = filterByTimeframe(allDates, [actualPadded, projP50, projP10, projP90], tfM);
-
-    const ctx = document.getElementById('chartProjections').getContext('2d');
-    currentCharts.projections = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: f.dates,
-        datasets: [
-          { label: 'Actual Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-          { label: 'Projected (p50)', data: f.series[1], borderColor: CHART_COLORS.projectionP50, borderDash: [4,2], fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-          { label: 'p10-p90 Range', data: f.series[2], borderColor: 'transparent', backgroundColor: CHART_COLORS.projectionP10, fill: '+1', tension: 0.3, pointRadius: 0 },
-          { label: '', data: f.series[3], borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
-        ]
-      },
-      options: commonOpts('Projected Net Worth'),
-    });
-  }
-
-  function drawStacked() {
-    destroyChart('stacked');
-    const tf = activeTimeframes.stacked;
-    const tfM = TIMEFRAMES[tf];
-    const f = filterByTimeframe(s.dates, [s.retirement, s.non_retirement], tfM);
-    const ctx = document.getElementById('chartStacked').getContext('2d');
-    currentCharts.stacked = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: f.dates,
-        datasets: [
-          { label: 'Non-Retirement', data: f.series[1], backgroundColor: CHART_COLORS.nonRetirement, borderRadius: 2 },
-          { label: 'Retirement', data: f.series[0], backgroundColor: CHART_COLORS.retirement, borderRadius: 2 },
-        ]
-      },
-      options: {
-        ...commonOpts('Retirement vs Non-Retirement'),
-        scales: {
-          x: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
-          y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, callback: function(v) { return formatCurrency(v); } }, grid: { color: CHART_COLORS.grid } }
-        }
-      },
-    });
-  }
-
-  // Build timeframe bars
-  makeTimeframeBar('timeframeBar', 'netWorth', drawNetWorth);
-  makeTimeframeBar('timeframeBarEx', 'exHousing', drawExHousing);
-  makeTimeframeBar('timeframeBarProj', 'projections', drawProjections);
-  makeTimeframeBar('timeframeBarStacked', 'stacked', drawStacked);
-
-  // Initial draw
-  drawNetWorth();
-  drawExHousing();
-  drawProjections();
+  // CHART 3: Retirement stacked
+  makeTFBar('timeframeBarStacked', 'stacked', TF_MAIN, drawStacked);
   drawStacked();
+}
+
+function drawNW() {
+  killChart('nw');
+  const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tf.nw]);
+  charts.nw = new Chart(document.getElementById('chartNetWorth').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: f.dates,
+      datasets: [
+        { label: 'Total', data: f.series[0], borderColor: CC.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+        { label: 'Excl. Home Equity', data: f.series[1], borderColor: CC.exHousing, borderDash: [5,3], fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+      ]
+    },
+    options: baseOpts(),
+  });
+}
+
+function drawStacked() {
+  killChart('stacked');
+  const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tf.stacked]);
+  charts.stacked = new Chart(document.getElementById('chartStacked').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: f.dates,
+      datasets: [
+        { label: 'Non-Retirement', data: f.series[1], backgroundColor: CC.nonRetirement, borderRadius: 2 },
+        { label: 'Retirement', data: f.series[0], backgroundColor: CC.retirement, borderRadius: 2 },
+      ]
+    },
+    options: {
+      ...baseOpts(),
+      scales: {
+        x: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+        y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: CC.grid } }
+      }
+    },
+  });
 }
 </script>
 </body>

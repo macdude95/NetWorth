@@ -2,7 +2,7 @@
 """
 Net Worth Dashboard Generator
 Reads config.json + data/snapshots.json -> writes a single static HTML file
-with Chart.js charts, password gate, projections, and timeframe toggles.
+with Chart.js charts, password gate, and timeframe toggles.
 Mobile-responsive, self-contained (Chart.js via CDN).
 
 Usage:
@@ -15,9 +15,6 @@ import hashlib
 import secrets
 import os
 import sys
-from math import exp, sqrt
-import random
-from datetime import datetime, timedelta
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(PROJECT_DIR, "config.json")
@@ -81,88 +78,6 @@ def derive_net_worth_series(snapshots, config):
     }
 
 
-def compute_projections(snapshots, config):
-    """Forward projection: growth + contributions + Monte Carlo bands."""
-    proj_cfg = config.get("projections", {})
-    if not proj_cfg.get("enabled"):
-        return None
-
-    horizon_months = proj_cfg["horizon_years"] * 12
-    contributions = proj_cfg["contributions_usd_per_month"]
-    volatility = proj_cfg["volatility_annual_pct"]
-    mc_runs = proj_cfg.get("monte_carlo_runs", 500)
-    accounts_def = config["accounts"]
-
-    last = snapshots[-1]
-    start_values = {}
-    for key in accounts_def:
-        start_values[key] = last["accounts"].get(key, 0)
-
-    # Deterministic p50 projection (compound growth + contributions)
-    p50 = []
-    for m in range(horizon_months + 1):
-        total = 0.0
-        for key, val in start_values.items():
-            acct = accounts_def[key]
-            r = acct["growth_rate"]
-            monthly_growth = val * ((1 + r) ** (m / 12))
-            contrib = contributions.get(key, 0) * m
-            total += monthly_growth + contrib
-        p50.append(round(total, 2))
-
-    # Monte Carlo for p10/p90 bands
-    random.seed(42)
-    paths = []
-    for _ in range(mc_runs):
-        path = []
-        current = dict(start_values)
-        for m in range(horizon_months + 1):
-            total = 0.0
-            for key, val in current.items():
-                acct = accounts_def[key]
-                bucket = acct["bucket"]
-                liquid = acct["liquid"]
-                if not liquid:
-                    vol_key = "home"
-                else:
-                    vol_key = bucket  # "retirement" or "non_retirement"
-                annual_vol = volatility.get(vol_key, 15) / 100.0
-                monthly_vol = annual_vol / sqrt(12)
-                r = acct["growth_rate"]
-                shock = random.gauss(0, monthly_vol)
-                new_val = val * exp((r - 0.5 * monthly_vol ** 2) / 12 + shock)
-                total += new_val
-                current[key] = new_val
-            for key, contrib in contributions.items():
-                if m > 0:
-                    total += contrib
-                    current[key] += contrib
-            path.append(round(total, 2))
-        paths.append(path)
-
-    p10_band = []
-    p90_band = []
-    for m in range(horizon_months + 1):
-        vals = sorted(p[m] for p in paths)
-        p10_band.append(vals[int(mc_runs * 0.10)])
-        p90_band.append(vals[int(mc_runs * 0.90)])
-
-    last_date = last["date"]
-    dt = datetime.strptime(last_date, "%Y-%m-%d")
-    proj_dates = []
-    for m in range(horizon_months + 1):
-        d = dt + timedelta(days=m * 30)
-        proj_dates.append(d.strftime("%Y-%m-%d"))
-
-    return {
-        "dates": proj_dates,
-        "p50": p50,
-        "p10": p10_band,
-        "p90": p90_band,
-        "horizon_label": f"{proj_cfg['horizon_years']}yr projection",
-    }
-
-
 def hash_password(password, salt=None):
     if salt is None:
         salt = secrets.token_hex(16)
@@ -194,7 +109,6 @@ def main():
     snapshots = data["snapshots"]
 
     series = derive_net_worth_series(snapshots, config)
-    projections = compute_projections(snapshots, config)
 
     # Password setup
     pw_cfg = config.get("password", {})
@@ -208,9 +122,6 @@ def main():
 
     chart_data = {
         "series": series,
-        "projections": projections,
-        "accounts": config["accounts"],
-        "liabilities": config.get("liabilities", {}),
         "password": {
             "hash": stored_hash,
             "salt": stored_salt,

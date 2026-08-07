@@ -57,11 +57,31 @@
     }
     #gate .error { color: #f85149; font-size: 0.85rem; margin-top: 4px; min-height: 20px; }
     #dashboard { display: none; }
+    /* Projection controls */
+    .proj-controls {
+      background: #161b22; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    }
+    .proj-controls label {
+      display: flex; flex-direction: column; gap: 3px; font-size: 0.72rem; color: #8b949e;
+      text-transform: uppercase; min-width: 100px; flex: 1 1 130px;
+    }
+    .proj-controls input { 
+      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      padding: 6px 8px; color: #f0f6fc; font-size: 0.85rem; width: 100%;
+    }
+    .proj-controls input:focus { border-color: #1f6feb; outline: none; }
+    .proj-controls button {
+      background: #238636; color: #fff; border: none; border-radius: 6px;
+      padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
+    }
     @media (max-width: 480px) {
       body { padding: 8px; }
       .stats-row { gap: 6px; }
       .stat-box { flex: 1 1 90px; min-width: 80px; padding: 8px; }
       .stat-box .value { font-size: 1rem; }
+      .proj-controls { gap: 8px; }
+      .proj-controls label { min-width: 80px; flex: 1 1 100px; }
     }
   </style>
 </head>
@@ -81,24 +101,27 @@
 
   <div class="stats-row" id="statsRow"></div>
 
+  <!-- CHART 1: Net Worth (total + ex-housing on one chart) -->
   <div class="section">
-    <h2>Net Worth Over Time</h2>
-    <div class="timeframe-bar" id="timeframeBar"></div>
+    <h2>Net Worth</h2>
+    <div class="timeframe-bar" id="timeframeBarNW"></div>
     <div class="chart-wrapper"><canvas id="chartNetWorth"></canvas></div>
   </div>
 
-  <div class="section">
-    <h2>Total vs Excluding Home Equity</h2>
-    <div class="timeframe-bar" id="timeframeBarEx"></div>
-    <div class="chart-wrapper"><canvas id="chartExHousing"></canvas></div>
-  </div>
-
+  <!-- CHART 2: Projections -->
   <div class="section" id="projectionSection">
     <h2>Projections</h2>
+    <div class="proj-controls" id="projControls">
+      <label>Annual cost of living ($) <input type="number" id="projExpenses" value="96000" step="1000"></label>
+      <label>Annual income ($) <input type="number" id="projIncome" value="200000" step="1000"></label>
+      <label>Investment growth (%/yr) <input type="number" id="projGrowth" value="7" step="0.5" min="0" max="30"></label>
+      <button onclick="recalcProjections()">Update</button>
+    </div>
     <div class="timeframe-bar" id="timeframeBarProj"></div>
     <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
   </div>
 
+  <!-- CHART 3: Retirement vs Non-Retirement -->
   <div class="section">
     <h2>Retirement vs Non-Retirement</h2>
     <div class="timeframe-bar" id="timeframeBarStacked"></div>
@@ -107,8 +130,7 @@
 </div>
 
 <script>
-// --- Embedded data (injected by generate.py) ---
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "projections": {"dates": ["2026-08-01", "2026-08-31", "2026-09-30", "2026-10-30", "2026-11-29", "2026-12-29", "2027-01-28", "2027-02-27", "2027-03-29", "2027-04-28", "2027-05-28", "2027-06-27", "2027-07-27", "2027-08-26", "2027-09-25", "2027-10-25", "2027-11-24", "2027-12-24", "2028-01-23", "2028-02-22", "2028-03-23", "2028-04-22", "2028-05-22", "2028-06-21", "2028-07-21", "2028-08-20", "2028-09-19", "2028-10-19", "2028-11-18", "2028-12-18", "2029-01-17", "2029-02-16", "2029-03-18", "2029-04-17", "2029-05-17", "2029-06-16", "2029-07-16", "2029-08-15", "2029-09-14", "2029-10-14", "2029-11-13", "2029-12-13", "2030-01-12", "2030-02-11", "2030-03-13", "2030-04-12", "2030-05-12", "2030-06-11", "2030-07-11", "2030-08-10", "2030-09-09", "2030-10-09", "2030-11-08", "2030-12-08", "2031-01-07", "2031-02-06", "2031-03-08", "2031-04-07", "2031-05-07", "2031-06-06", "2031-07-06", "2031-08-05", "2031-09-04", "2031-10-04", "2031-11-03", "2031-12-03", "2032-01-02", "2032-02-01", "2032-03-02", "2032-04-01", "2032-05-01", "2032-05-31", "2032-06-30", "2032-07-30", "2032-08-29", "2032-09-28", "2032-10-28", "2032-11-27", "2032-12-27", "2033-01-26", "2033-02-25", "2033-03-27", "2033-04-26", "2033-05-26", "2033-06-25", "2033-07-25", "2033-08-24", "2033-09-23", "2033-10-23", "2033-11-22", "2033-12-22", "2034-01-21", "2034-02-20", "2034-03-22", "2034-04-21", "2034-05-21", "2034-06-20", "2034-07-20", "2034-08-19", "2034-09-18", "2034-10-18", "2034-11-17", "2034-12-17", "2035-01-16", "2035-02-15", "2035-03-17", "2035-04-16", "2035-05-16", "2035-06-15", "2035-07-15", "2035-08-14", "2035-09-13", "2035-10-13", "2035-11-12", "2035-12-12", "2036-01-11", "2036-02-10", "2036-03-11", "2036-04-10", "2036-05-10", "2036-06-09", "2036-07-09", "2036-08-08", "2036-09-07", "2036-10-07", "2036-11-06", "2036-12-06", "2037-01-05", "2037-02-04", "2037-03-06", "2037-04-05", "2037-05-05", "2037-06-04", "2037-07-04", "2037-08-03", "2037-09-02", "2037-10-02", "2037-11-01", "2037-12-01", "2037-12-31", "2038-01-30", "2038-03-01", "2038-03-31", "2038-04-30", "2038-05-30", "2038-06-29", "2038-07-29", "2038-08-28", "2038-09-27", "2038-10-27", "2038-11-26", "2038-12-26", "2039-01-25", "2039-02-24", "2039-03-26", "2039-04-25", "2039-05-25", "2039-06-24", "2039-07-24", "2039-08-23", "2039-09-22", "2039-10-22", "2039-11-21", "2039-12-21", "2040-01-20", "2040-02-19", "2040-03-20", "2040-04-19", "2040-05-19", "2040-06-18", "2040-07-18", "2040-08-17", "2040-09-16", "2040-10-16", "2040-11-15", "2040-12-15", "2041-01-14", "2041-02-13", "2041-03-15", "2041-04-14", "2041-05-14", "2041-06-13", "2041-07-13", "2041-08-12", "2041-09-11", "2041-10-11", "2041-11-10", "2041-12-10", "2042-01-09", "2042-02-08", "2042-03-10", "2042-04-09", "2042-05-09", "2042-06-08", "2042-07-08", "2042-08-07", "2042-09-06", "2042-10-06", "2042-11-05", "2042-12-05", "2043-01-04", "2043-02-03", "2043-03-05", "2043-04-04", "2043-05-04", "2043-06-03", "2043-07-03", "2043-08-02", "2043-09-01", "2043-10-01", "2043-10-31", "2043-11-30", "2043-12-30", "2044-01-29", "2044-02-28", "2044-03-29", "2044-04-28", "2044-05-28", "2044-06-27", "2044-07-27", "2044-08-26", "2044-09-25", "2044-10-25", "2044-11-24", "2044-12-24", "2045-01-23", "2045-02-22", "2045-03-24", "2045-04-23", "2045-05-23", "2045-06-22", "2045-07-22", "2045-08-21", "2045-09-20", "2045-10-20", "2045-11-19", "2045-12-19", "2046-01-18", "2046-02-17", "2046-03-19", "2046-04-18", "2046-05-18", "2046-06-17", "2046-07-17", "2046-08-16", "2046-09-15", "2046-10-15", "2046-11-14", "2046-12-14", "2047-01-13", "2047-02-12", "2047-03-14", "2047-04-13", "2047-05-13", "2047-06-12", "2047-07-12", "2047-08-11", "2047-09-10", "2047-10-10", "2047-11-09", "2047-12-09", "2048-01-08", "2048-02-07", "2048-03-08", "2048-04-07", "2048-05-07", "2048-06-06", "2048-07-06", "2048-08-05", "2048-09-04", "2048-10-04", "2048-11-03", "2048-12-03", "2049-01-02", "2049-02-01", "2049-03-03", "2049-04-02", "2049-05-02", "2049-06-01", "2049-07-01", "2049-07-31", "2049-08-30", "2049-09-29", "2049-10-29", "2049-11-28", "2049-12-28", "2050-01-27", "2050-02-26", "2050-03-28", "2050-04-27", "2050-05-27", "2050-06-26", "2050-07-26", "2050-08-25", "2050-09-24", "2050-10-24", "2050-11-23", "2050-12-23", "2051-01-22", "2051-02-21", "2051-03-23"], "p50": [1330500.0, 1340437.29, 1350402.94, 1360397.09, 1370419.89, 1380471.49, 1390552.04, 1400661.7, 1410800.62, 1420968.96, 1431166.86, 1441394.49, 1451652.0, 1461939.55, 1472257.3, 1482605.41, 1492984.03, 1503393.34, 1513833.48, 1524304.63, 1534806.95, 1545340.6, 1555905.74, 1566502.56, 1577131.2, 1587791.84, 1598484.66, 1609209.81, 1619967.48, 1630757.83, 1641581.03, 1652437.27, 1663326.71, 1674249.53, 1685205.9, 1696196.02, 1707220.04, 1718278.17, 1729370.56, 1740497.41, 1751658.9, 1762855.22, 1774086.54, 1785353.05, 1796654.95, 1807992.41, 1819365.63, 1830774.8, 1842220.1, 1853701.73, 1865219.89, 1876774.76, 1888366.54, 1899995.43, 1911661.62, 1923365.32, 1935106.72, 1946886.03, 1958703.43, 1970559.15, 1982453.38, 1994386.32, 2006358.19, 2018369.18, 2030419.51, 2042509.4, 2054639.03, 2066808.64, 2079018.44, 2091268.62, 2103559.43, 2115891.06, 2128263.73, 2140677.68, 2153133.1, 2165630.24, 2178169.3, 2190750.52, 2203374.12, 2216040.32, 2228749.35, 2241501.44, 2254296.83, 2267135.73, 2280018.39, 2292945.04, 2305915.91, 2318931.24, 2331991.27, 2345096.23, 2358246.37, 2371441.93, 2384683.15, 2397970.27, 2411303.55, 2424683.22, 2438109.54, 2451582.75, 2465103.12, 2478670.88, 2492286.29, 2505949.62, 2519661.11, 2533421.02, 2547229.61, 2561087.15, 2574993.9, 2588950.11, 2602956.06, 2617012.01, 2631118.23, 2645275.0, 2659482.57, 2673741.22, 2688051.24, 2702412.89, 2716826.44, 2731292.19, 2745810.41, 2760381.38, 2775005.38, 2789682.7, 2804413.63, 2819198.45, 2834037.46, 2848930.94, 2863879.19, 2878882.51, 2893941.18, 2909055.51, 2924225.79, 2939452.33, 2954735.43, 2970075.4, 2985472.53, 3000927.14, 3016439.54, 3032010.04, 3047638.95, 3063326.58, 3079073.26, 3094879.3, 3110745.01, 3126670.73, 3142656.77, 3158703.47, 3174811.14, 3190980.12, 3207210.73, 3223503.32, 3239858.2, 3256275.73, 3272756.23, 3289300.05, 3305907.53, 3322579.01, 3339314.84, 3356115.37, 3372980.94, 3389911.91, 3406908.62, 3423971.45, 3441100.73, 3458296.83, 3475560.12, 3492890.95, 3510289.69, 3527756.7, 3545292.37, 3562897.05, 3580571.12, 3598314.96, 3616128.94, 3634013.45, 3651968.86, 3669995.56, 3688093.93, 3706264.36, 3724507.25, 3742822.98, 3761211.95, 3779674.55, 3798211.19, 3816822.27, 3835508.18, 3854269.34, 3873106.15, 3892019.02, 3911008.37, 3930074.61, 3949218.15, 3968439.41, 3987738.82, 4007116.81, 4026573.78, 4046110.19, 4065726.44, 4085422.99, 4105200.26, 4125058.7, 4144998.74, 4165020.82, 4185125.4, 4205312.91, 4225583.82, 4245938.57, 4266377.61, 4286901.42, 4307510.44, 4328205.14, 4348985.98, 4369853.44, 4390807.99, 4411850.09, 4432980.22, 4454198.87, 4475506.51, 4496903.63, 4518390.71, 4539968.25, 4561636.73, 4583396.65, 4605248.52, 4627192.82, 4649230.06, 4671360.75, 4693585.39, 4715904.51, 4738318.6, 4760828.2, 4783433.81, 4806135.97, 4828935.2, 4851832.02, 4874826.97, 4897920.59, 4921113.4, 4944405.96, 4967798.81, 4991292.49, 5014887.55, 5038584.54, 5062384.03, 5086286.56, 5110292.71, 5134403.03, 5158618.1, 5182938.49, 5207364.77, 5231897.52, 5256537.31, 5281284.75, 5306140.4, 5331104.87, 5356178.75, 5381362.63, 5406657.11, 5432062.8, 5457580.32, 5483210.26, 5508953.24, 5534809.88, 5560780.8, 5586866.62, 5613067.98, 5639385.5, 5665819.83, 5692371.59, 5719041.43, 5745829.99, 5772737.93, 5799765.9, 5826914.55, 5854184.55, 5881576.56, 5909091.24, 5936729.26, 5964491.31, 5992378.06, 6020390.2, 6048528.4, 6076793.36, 6105185.78, 6133706.35, 6162355.77, 6191134.74, 6220043.99, 6249084.22, 6278256.15, 6307560.5, 6336997.99, 6366569.36, 6396275.34, 6426116.66, 6456094.08, 6486208.33, 6516460.16, 6546850.33, 6577379.6, 6608048.73, 6638858.49], "p10": [1310816.64, 1312394.88, 1313762.35, 1315862.13, 1320194.91, 1328238.39, 1331902.78, 1334779.7, 1350003.3, 1357539.28, 1362467.24, 1365521.86, 1369348.68, 1377173.08, 1379108.81, 1388745.17, 1396265.24, 1406609.45, 1409749.42, 1416148.28, 1414364.37, 1432359.06, 1434302.5, 1445612.82, 1455460.61, 1460183.71, 1464807.05, 1474402.91, 1491516.39, 1488584.16, 1497903.8, 1514407.45, 1527251.56, 1537416.94, 1544486.6, 1553536.27, 1555494.2, 1574537.48, 1578151.1, 1587987.77, 1596309.94, 1604143.15, 1608110.96, 1624082.99, 1635716.18, 1640919.53, 1636739.09, 1649916.4, 1658113.35, 1672121.03, 1686830.21, 1691362.46, 1707990.69, 1704357.41, 1714663.67, 1722198.31, 1733332.1, 1744101.72, 1752961.93, 1762538.31, 1771233.77, 1778649.86, 1783926.27, 1796190.73, 1818134.47, 1822927.77, 1848908.88, 1837582.09, 1851662.75, 1851686.87, 1874400.18, 1897709.87, 1917481.29, 1917078.31, 1922870.42, 1935063.2, 1954981.66, 1975900.92, 1977393.77, 2003276.09, 2006376.74, 2005616.95, 2016453.21, 2018430.06, 2035803.01, 2055697.96, 2074250.06, 2081557.38, 2101159.5, 2108447.11, 2109967.46, 2129059.88, 2135029.88, 2144384.69, 2150898.86, 2169253.23, 2176476.93, 2171471.96, 2209242.07, 2218398.79, 2246703.33, 2252003.85, 2270185.74, 2287723.27, 2267256.98, 2291328.32, 2313570.2, 2332381.75, 2352916.48, 2359049.73, 2380074.97, 2385376.06, 2375027.29, 2410590.69, 2429410.96, 2414063.35, 2434469.44, 2449351.32, 2461211.51, 2480906.23, 2494030.59, 2521995.0, 2525163.86, 2552271.07, 2570722.32, 2564842.22, 2589579.19, 2600512.29, 2600944.95, 2630133.48, 2638472.93, 2633461.63, 2650158.21, 2653837.45, 2690306.67, 2697168.25, 2699327.58, 2722538.5, 2722059.99, 2763457.25, 2774767.96, 2799940.13, 2806777.35, 2845775.48, 2869294.43, 2894659.83, 2922446.68, 2908643.74, 2916752.35, 2975139.43, 2968175.14, 2984771.2, 2997019.18, 3026622.27, 3035139.43, 3068573.26, 3054300.15, 3075204.67, 3082959.1, 3111695.38, 3111220.06, 3123363.62, 3164232.91, 3164448.01, 3194215.02, 3214157.61, 3221929.04, 3234357.57, 3273347.19, 3278159.25, 3290055.54, 3335936.65, 3346728.54, 3366858.04, 3369755.76, 3389338.61, 3365349.83, 3414021.65, 3409413.32, 3417072.7, 3467452.62, 3474729.33, 3477611.04, 3517552.5, 3519887.52, 3560374.71, 3599130.97, 3609287.18, 3661754.25, 3679212.18, 3723677.17, 3720557.48, 3753224.17, 3787924.19, 3789309.66, 3853852.0, 3872507.14, 3860696.97, 3931227.06, 3893641.94, 3937175.71, 3975964.52, 4001703.31, 4018987.99, 4021298.43, 4112190.45, 4121221.28, 4088549.88, 4110470.05, 4133885.04, 4156091.77, 4141885.13, 4170883.27, 4177025.75, 4184351.92, 4278881.31, 4256529.13, 4327580.4, 4357844.41, 4354805.03, 4371009.23, 4406506.42, 4469741.27, 4491639.5, 4515220.94, 4551664.88, 4558239.54, 4633657.7, 4629318.32, 4588783.9, 4628258.52, 4721861.29, 4740821.35, 4755995.57, 4801624.3, 4831744.29, 4850651.82, 4868911.21, 4899379.97, 4892702.44, 4918747.73, 4941617.94, 4991431.34, 4998108.22, 5031484.27, 5011876.55, 5084774.83, 5068285.74, 5131422.53, 5149069.93, 5190030.92, 5186120.13, 5222249.11, 5224850.31, 5296616.36, 5288731.01, 5356975.95, 5412385.46, 5476535.74, 5539674.38, 5538565.86, 5533977.77, 5558519.12, 5609412.6, 5608587.14, 5598993.94, 5675498.16, 5684070.24, 5750652.77, 5761703.15, 5768397.28, 5782561.09, 5876812.24, 5808101.9, 5940964.8, 5940936.63, 5976035.44, 6030123.09, 6098088.64, 6095220.98, 6153373.3, 6215975.39, 6213121.36, 6271623.12, 6277731.44, 6204363.01, 6218107.03, 6182132.62, 6262671.88, 6320879.79, 6347082.5, 6431807.31, 6503486.42, 6475708.85, 6580451.33, 6655990.23, 6528311.34, 6598203.95, 6652903.83, 6642250.5, 6711438.85], "p90": [1368623.1, 1390271.31, 1414093.92, 1429257.66, 1449467.3, 1469267.45, 1486493.36, 1494407.27, 1517834.8, 1528757.06, 1544218.33, 1562607.65, 1580836.08, 1590717.13, 1607078.29, 1622346.93, 1636280.05, 1662249.68, 1673461.63, 1702763.47, 1719988.88, 1733121.94, 1760585.31, 1771825.45, 1788540.74, 1799109.38, 1818330.05, 1838396.43, 1853820.67, 1867429.58, 1886849.63, 1897367.98, 1918347.81, 1941135.32, 1953818.74, 1981719.69, 1996215.57, 2012927.99, 2030529.58, 2046534.84, 2060390.74, 2092054.59, 2117373.74, 2136824.94, 2165113.9, 2170200.69, 2190576.96, 2198862.67, 2224749.51, 2258778.11, 2279223.9, 2282558.6, 2300109.25, 2317600.35, 2329743.45, 2357583.0, 2379281.23, 2399416.02, 2427421.78, 2446922.64, 2485647.9, 2515001.3, 2514626.13, 2552506.25, 2577960.55, 2606157.55, 2621511.27, 2634759.2, 2665073.58, 2701761.76, 2726417.18, 2723700.83, 2773193.13, 2809004.83, 2832760.33, 2849411.08, 2854044.01, 2890678.36, 2895511.16, 2918212.82, 2953469.05, 2986585.29, 3013482.39, 3038783.02, 3061465.13, 3118461.27, 3150875.14, 3181699.56, 3210409.8, 3221699.39, 3241488.09, 3261141.8, 3281590.66, 3289441.95, 3344391.25, 3369843.63, 3401423.33, 3423027.43, 3428803.94, 3475123.07, 3533622.4, 3542215.22, 3566522.29, 3622946.45, 3621514.52, 3665856.24, 3691021.39, 3746918.6, 3739713.2, 3759798.03, 3855743.54, 3840913.04, 3861438.45, 3879832.7, 3962154.08, 3948261.73, 3965690.23, 4003213.43, 4034738.8, 4045632.53, 4099833.79, 4107620.81, 4108382.56, 4138245.37, 4207189.81, 4267858.05, 4306434.11, 4347510.4, 4380907.16, 4427682.3, 4436819.66, 4494616.14, 4530610.32, 4516361.16, 4574718.85, 4581301.48, 4702105.92, 4740101.95, 4781776.87, 4854505.41, 4873650.83, 4883138.41, 4878580.81, 4991659.64, 4993174.29, 5003761.58, 5021933.89, 5054311.85, 5117917.64, 5167269.81, 5173976.26, 5244952.2, 5319396.28, 5427391.34, 5421958.67, 5498611.05, 5465039.63, 5499992.72, 5568996.12, 5594214.04, 5629092.13, 5695689.84, 5815380.67, 5850527.76, 5908406.4, 5930407.46, 5970992.48, 5989929.41, 6024731.16, 6125772.94, 6171192.27, 6199588.67, 6264525.37, 6269016.61, 6368287.19, 6396984.84, 6483991.35, 6532268.51, 6546496.0, 6584021.53, 6640822.75, 6641666.44, 6697837.0, 6767916.44, 6837180.92, 6901120.58, 7047101.07, 7084470.58, 7162883.08, 7259082.98, 7301548.55, 7340818.1, 7389301.3, 7455268.72, 7393127.2, 7334229.98, 7479717.78, 7597864.6, 7776865.84, 7792800.19, 7785794.64, 7834433.56, 7819185.69, 7907635.42, 8007885.25, 8216437.7, 8174769.74, 8223933.33, 8351867.65, 8405589.16, 8444205.73, 8569525.8, 8495727.65, 8751165.98, 8764901.7, 8785673.33, 8830797.33, 8867493.65, 8912095.14, 9021196.22, 9134885.58, 9229947.67, 9370469.62, 9367670.66, 9517337.1, 9539030.16, 9554882.71, 9493604.03, 9709220.11, 9770923.21, 9809789.82, 9907241.98, 9909352.09, 9981241.47, 10049204.58, 10144156.43, 10278071.85, 10233723.44, 10346618.62, 10466431.37, 10584004.27, 10767514.75, 10796015.25, 10961566.73, 11022779.53, 11165120.39, 11186143.29, 11212525.62, 11257056.29, 11202427.15, 11258498.65, 11367179.72, 11423300.68, 11570320.81, 11668300.68, 11842247.08, 11775474.38, 11956104.59, 12299134.06, 12383317.27, 12598550.22, 12723052.74, 12560591.43, 12870425.39, 12848766.97, 12963602.6, 13215487.34, 13243446.5, 13217297.02, 12957915.88, 13319574.81, 13622916.19, 13553493.99, 13854072.58, 13938196.52, 13931446.52, 14051531.94, 14049801.79, 14261500.48, 14332447.24, 14344781.21, 14367747.17, 14663758.76, 14747549.28, 14817660.55, 15072041.26, 15106262.7, 15128520.14, 15100029.14, 15455337.61, 15538528.48, 15675464.23, 15773834.67, 15807915.78, 15837068.79, 15742045.27, 15992019.0, 16034234.01, 16608026.78, 16578767.79, 16599170.67], "horizon_label": "25yr projection"}, "accounts": {"checking": {"label": "Checking", "bucket": "non_retirement", "liquid": true, "growth_rate": 0.0, "icon": "\ud83c\udfe6"}, "hysa": {"label": "High-Yield Savings", "bucket": "non_retirement", "liquid": true, "growth_rate": 0.04, "icon": "\ud83c\udfe6"}, "brokerage_taxable": {"label": "Brokerage (Taxable)", "bucket": "non_retirement", "liquid": true, "growth_rate": 0.07, "icon": "\ud83d\udcc8"}, "brokerage_roth": {"label": "Roth IRA", "bucket": "retirement", "liquid": true, "growth_rate": 0.07, "icon": "\ud83d\udcb0"}, "retirement_401k": {"label": "401(k)", "bucket": "retirement", "liquid": true, "growth_rate": 0.07, "icon": "\ud83d\udcb0"}, "home_equity": {"label": "Home Equity", "bucket": "non_retirement", "liquid": false, "growth_rate": 0.03, "icon": "\ud83c\udfe0"}}, "liabilities": {"mortgage_balance": {"label": "Mortgage Balance", "icon": "\ud83c\udfe0"}}, "password": {"hash": "f9f5a6a1d0b5cade41a9b52389fbe1cf599dc8bef002b82e0ae2fdc49febd302", "salt": "eaf710ab2b872710fe07086af2871a8a"}};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "password": {"hash": "81423d5109b24a532807d515850fc34c492642d6339e8895ce75fddde4a7c49e", "salt": "87244d250c28047cc649012899a9ee65"}};
 
 // --- Password gate ---
 function sha256(str) {
@@ -120,31 +142,28 @@ function sha256(str) {
 async function checkPassword() {
   const input = document.getElementById('pw-input').value;
   const hash = await sha256(DATA.password.salt + input);
-  const valid = (hash === DATA.password.hash);
-  if (valid) {
+  if (hash === DATA.password.hash) {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     initDashboard();
   } else {
     document.getElementById('pw-error').textContent = 'Wrong password';
   }
-  return false;
 }
 
-// --- Charts ---
-const CHART_COLORS = {
+// --- Chart colors ---
+const CC = {
   total: '#1f6feb',
   exHousing: '#3fb950',
   retirement: '#d29922',
   nonRetirement: '#1f6feb',
-  projectionP50: '#a5d6ff',
-  projectionP10: 'rgba(165,214,255,0.15)',
-  projectionP90: 'rgba(165,214,255,0.15)',
+  projP50: '#a5d6ff',
+  projBand: 'rgba(165,214,255,0.15)',
   grid: 'rgba(201,209,217,0.1)',
   tick: '#8b949e',
 };
 
-function formatCurrency(n) {
+function fmtShort(n) {
   if (n == null || isNaN(n)) return 'N/A';
   const abs = Math.abs(n);
   if (abs >= 1000000) return (n / 1000000).toFixed(1) + 'M';
@@ -152,16 +171,12 @@ function formatCurrency(n) {
   return n.toFixed(0);
 }
 
-function formatFull(n) {
-  if (n == null || isNaN(n)) return 'N/A';
-  return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
+// --- Timeframes ---
+const TF_MAIN = { 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
+const TF_PROJ = { '5Y': 60, '10Y': 120, '25Y': 300, 'All': 'all' };
 
-// --- Timeframe filtering ---
-const TIMEFRAMES = { '1M': 1, '3M': 3, 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
-
-function filterByTimeframe(dates, series, tf) {
-  if (tf === 'all') return { dates, series };
+function filterDates(dates, seriesArr, tf) {
+  if (tf === 'all') return { dates, series: seriesArr };
   const lastDate = new Date(dates[dates.length - 1]);
   let cutoff;
   if (tf === 'ytd') {
@@ -170,45 +185,147 @@ function filterByTimeframe(dates, series, tf) {
     cutoff = new Date(lastDate);
     cutoff.setMonth(cutoff.getMonth() - tf);
   }
-  const indices = [];
-  dates.forEach((d, i) => {
-    if (new Date(d) >= cutoff || dates.length - i <= 2) indices.push(i);
-  });
-  const fDates = indices.map(i => dates[i]);
-  const fSeries = series.map(s => indices.map(i => s[i]));
-  return { dates: fDates, series: fSeries };
+  const idx = [];
+  dates.forEach((d, i) => { if (new Date(d) >= cutoff || i >= dates.length - 2) idx.push(i); });
+  return { dates: idx.map(i => dates[i]), series: seriesArr.map(s => idx.map(i => s[i])) };
 }
 
-let currentCharts = {};
-let activeTimeframes = { netWorth: 'All', exHousing: 'All', projections: 'All', stacked: 'All' };
+let charts = {};
+function killChart(k) { if (charts[k]) { charts[k].destroy(); charts[k] = null; } }
 
-function destroyChart(key) {
-  if (currentCharts[key]) { currentCharts[key].destroy(); currentCharts[key] = null; }
-}
+let tf = { nw: 'All', proj: '5Y', stacked: 'All' };
 
-function makeTimeframeBar(containerId, chartKey, redrawFn) {
-  const bar = document.getElementById(containerId);
+function makeTFBar(parentId, key, labels, redraw) {
+  const bar = document.getElementById(parentId);
   bar.innerHTML = '';
-  Object.keys(TIMEFRAMES).forEach(label => {
+  Object.keys(labels).forEach(l => {
     const btn = document.createElement('button');
-    btn.textContent = label;
-    btn.className = activeTimeframes[chartKey] === label ? 'active' : '';
-    btn.onclick = () => {
-      activeTimeframes[chartKey] = label;
-      [...bar.children].forEach(b => b.className = '');
-      btn.className = 'active';
-      redrawFn();
-    };
+    btn.textContent = l;
+    btn.className = tf[key] === l ? 'active' : '';
+    btn.onclick = () => { tf[key] = l; bar.querySelectorAll('button').forEach(b => b.className = ''); btn.className = 'active'; redraw(); };
     bar.appendChild(btn);
   });
 }
 
-// --- Main dashboard init ---
+function baseOpts() {
+  return {
+    responsive: true, maintainAspectRatio: true,
+    plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
+    scales: {
+      x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+      y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: CC.grid } }
+    },
+    interaction: { intersect: false, mode: 'index' },
+  };
+}
+
+// --- Projection engine (client-side recalculation) ---
+let projCache = null;
+
+function calcProjections(expenses, income, growthPct) {
+  const s = DATA.series;
+  const snapshots = DATA.series;
+  // Get last snapshot values
+  const lastIdx = snapshots.dates.length - 1;
+  const totalNW = snapshots.net_worth_total[lastIdx];
+  const retirementVal = snapshots.retirement[lastIdx];
+  const nonRetVal = snapshots.non_retirement[lastIdx];
+
+  const horizonMonths = 25 * 12; // fixed 25yr horizon
+  const r = growthPct / 100;
+  const monthlyGrowth = r / 12;
+  const netSavings = (income - expenses) / 12; // monthly net savings
+
+  // Simple: annual net savings added to non-retirement; everything compounds
+  const p50 = [];
+  let nw = totalNW;
+  for (let m = 0; m <= horizonMonths; m++) {
+    p50.push(Math.round(nw));
+    nw = nw * (1 + monthlyGrowth) + Math.max(0, netSavings);
+  }
+
+  // Monte Carlo bands
+  const vol = 0.15 / Math.sqrt(12); // 15% annual vol
+  const runs = 200;
+  const paths = [];
+  for (let rn = 0; rn < runs; rn++) {
+    const path = [];
+    let val = totalNW;
+    for (let m = 0; m <= horizonMonths; m++) {
+      path.push(Math.round(val));
+      const shock = randn_bm() * vol;
+      val = val * Math.exp((monthlyGrowth - 0.5 * vol * vol) + shock) + Math.max(0, netSavings);
+    }
+    paths.push(path);
+  }
+
+  const p10 = [], p90 = [];
+  for (let m = 0; m <= horizonMonths; m++) {
+    const vals = paths.map(p => p[m]).sort((a, b) => a - b);
+    p10.push(vals[Math.floor(runs * 0.10)]);
+    p90.push(vals[Math.floor(runs * 0.90)]);
+  }
+
+  // Build dates
+  const lastDate = new Date(snapshots.dates[lastIdx]);
+  const projDates = [];
+  for (let m = 1; m <= horizonMonths; m++) {
+    const d = new Date(lastDate);
+    d.setMonth(d.getMonth() + m);
+    projDates.push(d.toISOString().slice(0, 10));
+  }
+
+  const allDates = snapshots.dates.concat(projDates);
+  const actualPadded = snapshots.net_worth_total.concat(new Array(horizonMonths).fill(null));
+  const p50Padded = new Array(snapshots.dates.length).fill(null).concat(p50.slice(1));
+  const p10Padded = new Array(snapshots.dates.length).fill(null).concat(p10.slice(1));
+  const p90Padded = new Array(snapshots.dates.length).fill(null).concat(p90.slice(1));
+
+  return { allDates, actualPadded, p50Padded, p10Padded, p90Padded, p50, horizonMonths };
+}
+
+function drawProjectionsFn() {
+  killChart('projections');
+  if (!projCache) recalcProjections();
+  const p = projCache;
+  const f = filterDates(p.allDates, [p.actualPadded, p.p50Padded, p.p10Padded, p.p90Padded], TF_PROJ[tf.proj]);
+
+  charts.projections = new Chart(document.getElementById('chartProjections').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: f.dates,
+      datasets: [
+        { label: 'Actual', data: f.series[0], borderColor: CC.total, fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+        { label: 'Projected (p50)', data: f.series[1], borderColor: CC.projP50, borderDash: [4,2], fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+        { label: 'p10–p90', data: f.series[2], borderColor: 'transparent', backgroundColor: CC.projBand, fill: '+1', tension: 0.3, pointRadius: 0 },
+        { label: '', data: f.series[3], borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+      ]
+    },
+    options: baseOpts(),
+  });
+}
+
+function recalcProjections() {
+  const expenses = parseFloat(document.getElementById('projExpenses').value) || 96000;
+  const income = parseFloat(document.getElementById('projIncome').value) || 200000;
+  const growth = parseFloat(document.getElementById('projGrowth').value) || 7;
+  projCache = calcProjections(expenses, income, growth);
+  drawProjectionsFn();
+}
+
+// Normal random (Box-Muller)
+function randn_bm() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+// --- Main ---
 function initDashboard() {
   const s = DATA.series;
-  const p = DATA.projections;
 
-  // Stats row
+  // Stats
   const lastIdx = s.dates.length - 1;
   const prevIdx = Math.max(0, lastIdx - 1);
   const nw = s.net_worth_total[lastIdx];
@@ -218,142 +335,66 @@ function initDashboard() {
   const nwEx = s.net_worth_ex_housing[lastIdx];
   const ret = s.retirement[lastIdx];
 
-  document.getElementById('dateRange').textContent = 'Latest: ' + s.dates[lastIdx] + ' · ' + s.dates.length + ' snapshots · ' + s.dates[0] + ' → ' + s.dates[lastIdx];
+  document.getElementById('dateRange').textContent = `Latest: ${s.dates[lastIdx]} · ${s.dates.length} snapshots · ${s.dates[0]} → ${s.dates[lastIdx]}`;
+  document.getElementById('statsRow').innerHTML = [
+    { l: 'Net Worth', v: '$'+fmtShort(nw), d: `${delta>=0?'+':''}$${fmtShort(Math.abs(delta))} (${deltaPct>=0?'+':''}${deltaPct.toFixed(1)}%)`, pos: delta>=0 },
+    { l: 'Excl. Home', v: '$'+fmtShort(nwEx), d: '', pos: true },
+    { l: 'Retirement', v: '$'+fmtShort(ret), d: '', pos: true },
+    { l: 'Snapshots', v: s.dates.length, d: '', pos: true },
+  ].map(st => `<div class="stat-box"><div class="label">${st.l}</div><div class="value">${st.v}</div>${st.d ? `<div class="delta ${st.pos?'pos':'neg'}">${st.d}</div>` : ''}</div>`).join('');
 
-  const stats = [
-    { label: 'Net Worth', value: '$' + formatCurrency(nw), delta: (delta>=0?'+':'') + '$'+formatCurrency(Math.abs(delta)) + ' ('+(deltaPct>=0?'+':'')+deltaPct.toFixed(1)+'%)', pos: delta>=0 },
-    { label: 'Excl. Home', value: '$' + formatCurrency(nwEx), delta: '', pos: true },
-    { label: 'Retirement', value: '$' + formatCurrency(ret), delta: '', pos: true },
-    { label: 'Snapshots', value: s.dates.length, delta: '', pos: true },
-  ];
-  document.getElementById('statsRow').innerHTML = stats.map(st =>
-    '<div class="stat-box">' +
-      '<div class="label">' + st.label + '</div>' +
-      '<div class="value">' + st.value + '</div>' +
-      (st.delta ? '<div class="delta ' + (st.pos ? 'pos' : 'neg') + '">' + st.delta + '</div>' : '') +
-    '</div>').join('');
+  // CHART 1: Net Worth (total + ex-housing, one chart)
+  makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
+  drawNW();
 
-  const commonOpts = function(title) {
-    return {
-      responsive: true, maintainAspectRatio: true,
-      plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
-      scales: {
-        x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
-        y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: function(v) { return formatCurrency(v); } }, grid: { color: CHART_COLORS.grid } }
-      },
-      interaction: { intersect: false, mode: 'index' },
-    };
-  };
+  // CHART 2: Projections
+  document.getElementById('projExpenses').value = '96000';
+  document.getElementById('projIncome').value = '200000';
+  document.getElementById('projGrowth').value = '7';
+  makeTFBar('timeframeBarProj', 'proj', TF_PROJ, drawProjectionsFn);
+  recalcProjections();
 
-  function drawNetWorth() {
-    destroyChart('netWorth');
-    const tf = activeTimeframes.netWorth;
-    const tfM = TIMEFRAMES[tf];
-    const f = filterByTimeframe(s.dates, [s.net_worth_total], tfM);
-    const ctx = document.getElementById('chartNetWorth').getContext('2d');
-    currentCharts.netWorth = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: f.dates,
-        datasets: [
-          { label: 'Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2 },
-        ]
-      },
-      options: commonOpts('Net Worth'),
-    });
-  }
-
-  function drawExHousing() {
-    destroyChart('exHousing');
-    const tf = activeTimeframes.exHousing;
-    const tfM = TIMEFRAMES[tf];
-    const f = filterByTimeframe(s.dates, [s.net_worth_total, s.net_worth_ex_housing], tfM);
-    const ctx = document.getElementById('chartExHousing').getContext('2d');
-    currentCharts.exHousing = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: f.dates,
-        datasets: [
-          { label: 'Total Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-          { label: 'Excluding Home Equity', data: f.series[1], borderColor: CHART_COLORS.exHousing, backgroundColor: 'rgba(63,185,80,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2, borderDash: [5,3] },
-        ]
-      },
-      options: commonOpts('Total vs Ex-Housing'),
-    });
-  }
-
-  function drawProjections() {
-    destroyChart('projections');
-    if (!p) {
-      document.getElementById('projectionSection').style.display = 'none';
-      return;
-    }
-    document.getElementById('projectionSection').style.display = 'block';
-
-    // Combine actuals + projection dates
-    const allDates = s.dates.concat(p.dates.slice(1));
-    // Pad actual series to projection length with null fill
-    const actualPadded = s.net_worth_total.concat(new Array(p.dates.length - 1).fill(null));
-    const projP50 = new Array(s.dates.length).fill(null).concat(p.p50.slice(1));
-    const projP10 = new Array(s.dates.length).fill(null).concat(p.p10.slice(1));
-    const projP90 = new Array(s.dates.length).fill(null).concat(p.p90.slice(1));
-
-    const tf = activeTimeframes.projections;
-    const tfM = TIMEFRAMES[tf];
-    const f = filterByTimeframe(allDates, [actualPadded, projP50, projP10, projP90], tfM);
-
-    const ctx = document.getElementById('chartProjections').getContext('2d');
-    currentCharts.projections = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: f.dates,
-        datasets: [
-          { label: 'Actual Net Worth', data: f.series[0], borderColor: CHART_COLORS.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-          { label: 'Projected (p50)', data: f.series[1], borderColor: CHART_COLORS.projectionP50, borderDash: [4,2], fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-          { label: 'p10-p90 Range', data: f.series[2], borderColor: 'transparent', backgroundColor: CHART_COLORS.projectionP10, fill: '+1', tension: 0.3, pointRadius: 0 },
-          { label: '', data: f.series[3], borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
-        ]
-      },
-      options: commonOpts('Projected Net Worth'),
-    });
-  }
-
-  function drawStacked() {
-    destroyChart('stacked');
-    const tf = activeTimeframes.stacked;
-    const tfM = TIMEFRAMES[tf];
-    const f = filterByTimeframe(s.dates, [s.retirement, s.non_retirement], tfM);
-    const ctx = document.getElementById('chartStacked').getContext('2d');
-    currentCharts.stacked = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: f.dates,
-        datasets: [
-          { label: 'Non-Retirement', data: f.series[1], backgroundColor: CHART_COLORS.nonRetirement, borderRadius: 2 },
-          { label: 'Retirement', data: f.series[0], backgroundColor: CHART_COLORS.retirement, borderRadius: 2 },
-        ]
-      },
-      options: {
-        ...commonOpts('Retirement vs Non-Retirement'),
-        scales: {
-          x: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
-          y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, callback: function(v) { return formatCurrency(v); } }, grid: { color: CHART_COLORS.grid } }
-        }
-      },
-    });
-  }
-
-  // Build timeframe bars
-  makeTimeframeBar('timeframeBar', 'netWorth', drawNetWorth);
-  makeTimeframeBar('timeframeBarEx', 'exHousing', drawExHousing);
-  makeTimeframeBar('timeframeBarProj', 'projections', drawProjections);
-  makeTimeframeBar('timeframeBarStacked', 'stacked', drawStacked);
-
-  // Initial draw
-  drawNetWorth();
-  drawExHousing();
-  drawProjections();
+  // CHART 3: Retirement stacked
+  makeTFBar('timeframeBarStacked', 'stacked', TF_MAIN, drawStacked);
   drawStacked();
+}
+
+function drawNW() {
+  killChart('nw');
+  const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tf.nw]);
+  charts.nw = new Chart(document.getElementById('chartNetWorth').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: f.dates,
+      datasets: [
+        { label: 'Total', data: f.series[0], borderColor: CC.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+        { label: 'Excl. Home Equity', data: f.series[1], borderColor: CC.exHousing, borderDash: [5,3], fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+      ]
+    },
+    options: baseOpts(),
+  });
+}
+
+function drawStacked() {
+  killChart('stacked');
+  const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tf.stacked]);
+  charts.stacked = new Chart(document.getElementById('chartStacked').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: f.dates,
+      datasets: [
+        { label: 'Non-Retirement', data: f.series[1], backgroundColor: CC.nonRetirement, borderRadius: 2 },
+        { label: 'Retirement', data: f.series[0], backgroundColor: CC.retirement, borderRadius: 2 },
+      ]
+    },
+    options: {
+      ...baseOpts(),
+      scales: {
+        x: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+        y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: CC.grid } }
+      }
+    },
+  });
 }
 </script>
 </body>
