@@ -117,6 +117,11 @@
       <label>Investment growth (%/yr) <input type="number" id="projGrowth" value="7" step="0.5" min="0" max="30"></label>
       <button onclick="recalcProjections()">Update</button>
     </div>
+    <div style="font-size:0.72rem;color:#8b949e;margin-bottom:10px;line-height:1.5">
+      Your net savings (income − expenses) are invested at the growth rate above.
+      The <b>dashed line</b> is the median forecast; the <b>shaded band</b> covers 80% of possible outcomes
+      (market returns are uncertain — actual results will vary).
+    </div>
     <div class="timeframe-bar" id="timeframeBarProj"></div>
     <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
   </div>
@@ -295,10 +300,9 @@ function drawProjectionsFn() {
     data: {
       labels: f.dates,
       datasets: [
-        { label: 'Actual', data: f.series[0], borderColor: CC.total, fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-        { label: 'Projected (p50)', data: f.series[1], borderColor: CC.projP50, borderDash: [4,2], fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-        { label: 'p10–p90', data: f.series[2], borderColor: 'transparent', backgroundColor: CC.projBand, fill: '+1', tension: 0.3, pointRadius: 0 },
-        { label: '', data: f.series[3], borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+        { label: 'Actual (your data)', data: f.series[0], borderColor: CC.total, fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+        { label: 'Most likely (median)', data: f.series[1], borderColor: CC.projP50, borderDash: [4,2], fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+        { label: 'Realistic range (80% of outcomes)', data: f.series[2], borderColor: 'transparent', backgroundColor: CC.projBand, fill: '+1', tension: 0.3, pointRadius: 0 },
       ]
     },
     options: baseOpts(),
