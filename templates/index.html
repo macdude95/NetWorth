@@ -179,7 +179,11 @@ const DATA = __CHART_DATA_JSON__;
   if (!DATA.password_enabled) {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
-    initDashboard();
+    if (typeof Chart !== 'undefined') {
+      initDashboard();
+    } else {
+      window.addEventListener('load', initDashboard);
+    }
   }
 })();
 
