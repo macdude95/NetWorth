@@ -144,13 +144,11 @@
   <div class="section" id="projectionSection">
     <h2>Projections (30 years)</h2>
     <div class="proj-controls" id="projControls">
-      <label>Annual cost of living ($) <input type="number" id="projExpenses" value="96000" step="1000"></label>
-      <label>Annual income ($) <input type="number" id="projIncome" value="200000" step="1000"></label>
       <label>Investment growth (%/yr) <input type="number" id="projGrowth" value="7" step="0.5" min="0" max="30"></label>
       <button onclick="recalcProjections()">Update</button>
     </div>
     <div style="font-size:0.72rem;color:#8b949e;margin-bottom:10px;line-height:1.5">
-      Your net savings (income − expenses) are invested at the growth rate above, starting from your current net worth.
+      Starting from your current net worth, with income and expenses from your latest snapshot.
       The <b>solid line</b> is the median forecast; the <b>shaded band</b> covers 80% of possible outcomes.
     </div>
     <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
@@ -173,7 +171,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000}, "password": {"hash": "11ee47590ac1e60ca13be0ba9f443dd5cbef822521a08dead107e2480f02b78a", "salt": "e377641ae86e295ef7b3279550df6fb8"}, "password_enabled": false};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": null, "expenses": null}, "password": {"hash": "71fd8950a18249e5d14a7b86e0ef1a9efb8ab2062e412e95dd1c48053575d3c5", "salt": "6f32f228ebaa31f77c3f33e34baa3fd3"}, "password_enabled": false};
 
 // --- Password gate ---
 function sha256(str) {
@@ -308,9 +306,10 @@ function drawProjectionsFn() {
 }
 
 function recalcProjections() {
-  const expenses = parseFloat(document.getElementById('projExpenses').value) || 96000;
-  const income = parseFloat(document.getElementById('projIncome').value) || 200000;
   const growth = parseFloat(document.getElementById('projGrowth').value) || 7;
+  const c = DATA.current || {};
+  const expenses = c.expenses || 96000;
+  const income = c.income || 200000;
   projCache = calcProjections(expenses, income, growth);
   drawProjectionsFn();
   buildAchievementPanel();
@@ -337,7 +336,8 @@ function getCurrentValues() {
 
 function buildMilestones(proj) {
   const cur = getCurrentValues();
-  const expenses = parseFloat(document.getElementById('projExpenses').value) || 96000;
+  const c = DATA.current || {};
+  const expenses = c.expenses || 96000;
 
   function findCrossMonth(target) {
     for (let m = 0; m < proj.p50.length; m++) { if (proj.p50[m] >= target) return m; }
@@ -490,8 +490,6 @@ function initDashboard() {
 
   makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
   drawNW();
-  document.getElementById('projExpenses').value = '96000';
-  document.getElementById('projIncome').value = '200000';
   document.getElementById('projGrowth').value = '7';
   recalcProjections();
   makeTFBar('timeframeBarStacked', 'stacked', TF_MAIN, drawStacked);

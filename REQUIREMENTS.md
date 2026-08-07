@@ -50,7 +50,7 @@ NetWorth/
 }
 ```
 
-Each account exists as a key in `accounts`. Liabilities (mortgage) reduce net worth. `home_equity` is net of the mortgage (already equity, not gross value).
+Each account exists as a key in `accounts`. Liabilities (mortgage) reduce net worth. `home_equity` is net of the mortgage (already equity, not gross value). Optional top-level fields `income` and `expenses` (annual) feed projection calculations and FIRE milestones.
 
 ### `config.json`
 

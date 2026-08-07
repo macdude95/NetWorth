@@ -125,6 +125,8 @@ def main():
         "current": {
             "mortgage_balance": snapshots[-1].get("liabilities", {}).get("mortgage_balance", None),
             "home_equity": snapshots[-1]["accounts"].get("home_equity", 0),
+            "income": snapshots[-1].get("income", None),
+            "expenses": snapshots[-1].get("expenses", None),
         },
         "password": {
             "hash": stored_hash,

@@ -144,13 +144,11 @@
   <div class="section" id="projectionSection">
     <h2>Projections (30 years)</h2>
     <div class="proj-controls" id="projControls">
-      <label>Annual cost of living ($) <input type="number" id="projExpenses" value="96000" step="1000"></label>
-      <label>Annual income ($) <input type="number" id="projIncome" value="200000" step="1000"></label>
       <label>Investment growth (%/yr) <input type="number" id="projGrowth" value="7" step="0.5" min="0" max="30"></label>
       <button onclick="recalcProjections()">Update</button>
     </div>
     <div style="font-size:0.72rem;color:#8b949e;margin-bottom:10px;line-height:1.5">
-      Your net savings (income − expenses) are invested at the growth rate above, starting from your current net worth.
+      Starting from your current net worth, with income and expenses from your latest snapshot.
       The <b>solid line</b> is the median forecast; the <b>shaded band</b> covers 80% of possible outcomes.
     </div>
     <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
@@ -308,9 +306,10 @@ function drawProjectionsFn() {
 }
 
 function recalcProjections() {
-  const expenses = parseFloat(document.getElementById('projExpenses').value) || 96000;
-  const income = parseFloat(document.getElementById('projIncome').value) || 200000;
   const growth = parseFloat(document.getElementById('projGrowth').value) || 7;
+  const c = DATA.current || {};
+  const expenses = c.expenses || 96000;
+  const income = c.income || 200000;
   projCache = calcProjections(expenses, income, growth);
   drawProjectionsFn();
   buildAchievementPanel();
@@ -337,7 +336,8 @@ function getCurrentValues() {
 
 function buildMilestones(proj) {
   const cur = getCurrentValues();
-  const expenses = parseFloat(document.getElementById('projExpenses').value) || 96000;
+  const c = DATA.current || {};
+  const expenses = c.expenses || 96000;
 
   function findCrossMonth(target) {
     for (let m = 0; m < proj.p50.length; m++) { if (proj.p50[m] >= target) return m; }
@@ -490,8 +490,6 @@ function initDashboard() {
 
   makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
   drawNW();
-  document.getElementById('projExpenses').value = '96000';
-  document.getElementById('projIncome').value = '200000';
   document.getElementById('projGrowth').value = '7';
   recalcProjections();
   makeTFBar('timeframeBarStacked', 'stacked', TF_MAIN, drawStacked);
