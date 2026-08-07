@@ -135,6 +135,14 @@
 <script>
 const DATA = __CHART_DATA_JSON__;
 
+(function() {
+  if (!DATA.password_enabled) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    initDashboard();
+  }
+})();
+
 // --- Password gate ---
 function sha256(str) {
   const encoder = new TextEncoder();

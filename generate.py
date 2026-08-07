@@ -126,6 +126,7 @@ def main():
             "hash": stored_hash,
             "salt": stored_salt,
         },
+        "password_enabled": False,
     }
 
     with open(TEMPLATE_PATH) as f:
