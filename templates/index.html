@@ -110,7 +110,7 @@
 
   <!-- CHART 2: Projections -->
   <div class="section" id="projectionSection">
-    <h2>Projections</h2>
+    <h2>Projections (30 years)</h2>
     <div class="proj-controls" id="projControls">
       <label>Annual cost of living ($) <input type="number" id="projExpenses" value="96000" step="1000"></label>
       <label>Annual income ($) <input type="number" id="projIncome" value="200000" step="1000"></label>
@@ -118,11 +118,9 @@
       <button onclick="recalcProjections()">Update</button>
     </div>
     <div style="font-size:0.72rem;color:#8b949e;margin-bottom:10px;line-height:1.5">
-      Your net savings (income − expenses) are invested at the growth rate above.
-      The <b>dashed line</b> is the median forecast; the <b>shaded band</b> covers 80% of possible outcomes
-      (market returns are uncertain — actual results will vary).
+      Your net savings (income − expenses) are invested at the growth rate above, starting from your current net worth.
+      The <b>solid line</b> is the median forecast; the <b>shaded band</b> covers 80% of possible outcomes.
     </div>
-    <div class="timeframe-bar" id="timeframeBarProj"></div>
     <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
   </div>
 
@@ -178,7 +176,6 @@ function fmtShort(n) {
 
 // --- Timeframes ---
 const TF_MAIN = { 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
-const TF_PROJ = { '5Y': 60, '10Y': 120, '25Y': 300, 'All': 'all' };
 
 function filterDates(dates, seriesArr, tf) {
   if (tf === 'all') return { dates, series: seriesArr };
@@ -198,7 +195,7 @@ function filterDates(dates, seriesArr, tf) {
 let charts = {};
 function killChart(k) { if (charts[k]) { charts[k].destroy(); charts[k] = null; } }
 
-let tf = { nw: 'All', proj: '5Y', stacked: 'All' };
+let tf = { nw: 'All', stacked: 'All' };
 
 function makeTFBar(parentId, key, labels, redraw) {
   const bar = document.getElementById(parentId);
@@ -229,19 +226,14 @@ let projCache = null;
 
 function calcProjections(expenses, income, growthPct) {
   const s = DATA.series;
-  const snapshots = DATA.series;
-  // Get last snapshot values
-  const lastIdx = snapshots.dates.length - 1;
-  const totalNW = snapshots.net_worth_total[lastIdx];
-  const retirementVal = snapshots.retirement[lastIdx];
-  const nonRetVal = snapshots.non_retirement[lastIdx];
+  const lastIdx = s.dates.length - 1;
+  const totalNW = s.net_worth_total[lastIdx];
 
-  const horizonMonths = 25 * 12; // fixed 25yr horizon
+  const horizonMonths = 30 * 12; // hardcoded 30 years
   const r = growthPct / 100;
   const monthlyGrowth = r / 12;
-  const netSavings = (income - expenses) / 12; // monthly net savings
+  const netSavings = (income - expenses) / 12;
 
-  // Simple: annual net savings added to non-retirement; everything compounds
   const p50 = [];
   let nw = totalNW;
   for (let m = 0; m <= horizonMonths; m++) {
@@ -250,7 +242,7 @@ function calcProjections(expenses, income, growthPct) {
   }
 
   // Monte Carlo bands
-  const vol = 0.15 / Math.sqrt(12); // 15% annual vol
+  const vol = 0.15 / Math.sqrt(12);
   const runs = 200;
   const paths = [];
   for (let rn = 0; rn < runs; rn++) {
@@ -271,38 +263,32 @@ function calcProjections(expenses, income, growthPct) {
     p90.push(vals[Math.floor(runs * 0.90)]);
   }
 
-  // Build dates
-  const lastDate = new Date(snapshots.dates[lastIdx]);
+  // Build future dates only (no actuals concatenated)
+  const lastDate = new Date(s.dates[lastIdx]);
+  // Start at month 0 (today) so the projection line starts at current NW
   const projDates = [];
-  for (let m = 1; m <= horizonMonths; m++) {
+  for (let m = 0; m <= horizonMonths; m++) {
     const d = new Date(lastDate);
     d.setMonth(d.getMonth() + m);
     projDates.push(d.toISOString().slice(0, 10));
   }
 
-  const allDates = snapshots.dates.concat(projDates);
-  const actualPadded = snapshots.net_worth_total.concat(new Array(horizonMonths).fill(null));
-  const p50Padded = new Array(snapshots.dates.length).fill(null).concat(p50.slice(1));
-  const p10Padded = new Array(snapshots.dates.length).fill(null).concat(p10.slice(1));
-  const p90Padded = new Array(snapshots.dates.length).fill(null).concat(p90.slice(1));
-
-  return { allDates, actualPadded, p50Padded, p10Padded, p90Padded, p50, horizonMonths };
+  return { projDates, p50, p10, p90 };
 }
 
 function drawProjectionsFn() {
   killChart('projections');
   if (!projCache) recalcProjections();
   const p = projCache;
-  const f = filterDates(p.allDates, [p.actualPadded, p.p50Padded, p.p10Padded, p.p90Padded], TF_PROJ[tf.proj]);
 
   charts.projections = new Chart(document.getElementById('chartProjections').getContext('2d'), {
     type: 'line',
     data: {
-      labels: f.dates,
+      labels: p.projDates,
       datasets: [
-        { label: 'Actual (your data)', data: f.series[0], borderColor: CC.total, fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-        { label: 'Most likely (median)', data: f.series[1], borderColor: CC.projP50, borderDash: [4,2], fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-        { label: 'Realistic range (80% of outcomes)', data: f.series[2], borderColor: 'transparent', backgroundColor: CC.projBand, fill: '+1', tension: 0.3, pointRadius: 0 },
+        { label: 'Lower range (p10)', data: p.p10, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+        { label: 'Most likely (median)', data: p.p50, borderColor: CC.projP50, fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+        { label: 'Realistic range (80% of outcomes)', data: p.p90, borderColor: 'transparent', backgroundColor: CC.projBand, fill: '-1', tension: 0.3, pointRadius: 0 },
       ]
     },
     options: baseOpts(),
@@ -355,7 +341,6 @@ function initDashboard() {
   document.getElementById('projExpenses').value = '96000';
   document.getElementById('projIncome').value = '200000';
   document.getElementById('projGrowth').value = '7';
-  makeTFBar('timeframeBarProj', 'proj', TF_PROJ, drawProjectionsFn);
   recalcProjections();
 
   // CHART 3: Retirement stacked
