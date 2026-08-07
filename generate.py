@@ -122,6 +122,10 @@ def main():
 
     chart_data = {
         "series": series,
+        "current": {
+            "mortgage_balance": snapshots[-1].get("liabilities", {}).get("mortgage_balance", None),
+            "home_equity": snapshots[-1]["accounts"].get("home_equity", 0),
+        },
         "password": {
             "hash": stored_hash,
             "salt": stored_salt,

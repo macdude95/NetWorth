@@ -40,7 +40,6 @@
     .stat-box .value { font-size: 1.2rem; font-weight: 700; color: #f0f6fc; }
     .stat-box .delta { font-size: 0.7rem; margin-top: 2px; }
     .delta.pos { color: #3fb950; } .delta.neg { color: #f85149; }
-    /* Password gate */
     #gate {
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; min-height: 70vh;
@@ -57,7 +56,6 @@
     }
     #gate .error { color: #f85149; font-size: 0.85rem; margin-top: 4px; min-height: 20px; }
     #dashboard { display: none; }
-    /* Projection controls */
     .proj-controls {
       background: #161b22; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
       display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
@@ -74,6 +72,40 @@
     .proj-controls button {
       background: #238636; color: #fff; border: none; border-radius: 6px;
       padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
+    }
+    /* Achievements panel */
+    .ach-toggle {
+      background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
+      padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
+      margin-bottom: 12px; width: 100%; text-align: left; display: flex;
+      justify-content: space-between; align-items: center;
+    }
+    .ach-toggle:hover { background: #30363d; }
+    .milestone-row {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      border-bottom: 1px solid #21262d; font-size: 0.82rem;
+    }
+    .milestone-row:last-child { border-bottom: none; }
+    .milestone-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+    .milestone-name { flex: 1; min-width: 120px; }
+    .milestone-progress { flex: 2; }
+    .progress-bar-bg {
+      height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; margin-top: 2px;
+    }
+    .progress-bar-fill {
+      height: 100%; border-radius: 3px; transition: width 0.3s;
+    }
+    .progress-bar-fill.done { background: #3fb950; }
+    .progress-bar-fill.close { background: #d29922; }
+    .progress-bar-fill.far { background: #30363d; }
+    .milestone-date { font-size: 0.72rem; color: #8b949e; min-width: 90px; text-align: right; }
+    .milestone-status { font-size: 0.72rem; min-width: 50px; text-align: right; }
+    .milestone-status.done { color: #3fb950; }
+    .milestone-status.close { color: #d29922; }
+    .milestone-status.far { color: #8b949e; }
+    .ach-group-title {
+      font-size: 0.72rem; color: #8b949e; text-transform: uppercase;
+      padding: 10px 10px 4px; letter-spacing: 0.5px;
     }
     @media (max-width: 480px) {
       body { padding: 8px; }
@@ -101,7 +133,7 @@
 
   <div class="stats-row" id="statsRow"></div>
 
-  <!-- CHART 1: Net Worth (total + ex-housing on one chart) -->
+  <!-- CHART 1: Net Worth -->
   <div class="section">
     <h2>Net Worth</h2>
     <div class="timeframe-bar" id="timeframeBarNW"></div>
@@ -130,10 +162,18 @@
     <div class="timeframe-bar" id="timeframeBarStacked"></div>
     <div class="chart-wrapper"><canvas id="chartStacked"></canvas></div>
   </div>
+
+  <!-- ACHIEVEMENTS -->
+  <div class="section">
+    <button class="ach-toggle" onclick="toggleAchievements()">
+      🏆 Achievements <span id="achCaret" style="font-size:0.7rem;">▶</span>
+    </button>
+    <div id="achPanel" style="display:none;background:#161b22;border-radius:8px;padding:4px 0;margin-top:-4px;" class="chart-wrapper"></div>
+  </div>
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "password": {"hash": "04422565f85d985f3c3fce2aec383a604d12b91a4914a12ef20073f4e33e4e5c", "salt": "220b9726efc7fbbce1680d8a948972dc"}, "password_enabled": false};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000}, "password": {"hash": "4ef7cacdf67e237aa6c82811346a31da3e3bf29440f71846c5d47eb4b0e16dc6", "salt": "68474709bb7df4431a85ab9f8ceceda5"}, "password_enabled": false};
 
 (function() {
   if (!DATA.password_enabled) {
@@ -149,7 +189,6 @@ function sha256(str) {
   return crypto.subtle.digest('SHA-256', encoder.encode(str))
     .then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join(''));
 }
-
 async function checkPassword() {
   const input = document.getElementById('pw-input').value;
   const hash = await sha256(DATA.password.salt + input);
@@ -162,16 +201,12 @@ async function checkPassword() {
   }
 }
 
-// --- Chart colors ---
+// --- Colors ---
 const CC = {
-  total: '#1f6feb',
-  exHousing: '#3fb950',
-  retirement: '#d29922',
-  nonRetirement: '#1f6feb',
-  projP50: '#a5d6ff',
-  projBand: 'rgba(165,214,255,0.15)',
-  grid: 'rgba(201,209,217,0.1)',
-  tick: '#8b949e',
+  total: '#1f6feb', exHousing: '#3fb950', retirement: '#d29922', nonRetirement: '#1f6feb',
+  projP50: '#a5d6ff', projBand: 'rgba(165,214,255,0.15)',
+  grid: 'rgba(201,209,217,0.1)', tick: '#8b949e',
+  milestoneDone: '#3fb950', milestoneClose: '#d29922', milestoneFar: '#8b949e',
 };
 
 function fmtShort(n) {
@@ -184,17 +219,12 @@ function fmtShort(n) {
 
 // --- Timeframes ---
 const TF_MAIN = { 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
-
 function filterDates(dates, seriesArr, tf) {
   if (tf === 'all') return { dates, series: seriesArr };
   const lastDate = new Date(dates[dates.length - 1]);
   let cutoff;
-  if (tf === 'ytd') {
-    cutoff = new Date(lastDate.getFullYear(), 0, 1);
-  } else {
-    cutoff = new Date(lastDate);
-    cutoff.setMonth(cutoff.getMonth() - tf);
-  }
+  if (tf === 'ytd') { cutoff = new Date(lastDate.getFullYear(), 0, 1); }
+  else { cutoff = new Date(lastDate); cutoff.setMonth(cutoff.getMonth() - tf); }
   const idx = [];
   dates.forEach((d, i) => { if (new Date(d) >= cutoff || i >= dates.length - 2) idx.push(i); });
   return { dates: idx.map(i => dates[i]), series: seriesArr.map(s => idx.map(i => s[i])) };
@@ -202,21 +232,17 @@ function filterDates(dates, seriesArr, tf) {
 
 let charts = {};
 function killChart(k) { if (charts[k]) { charts[k].destroy(); charts[k] = null; } }
-
 let tf = { nw: 'All', stacked: 'All' };
-
 function makeTFBar(parentId, key, labels, redraw) {
   const bar = document.getElementById(parentId);
   bar.innerHTML = '';
   Object.keys(labels).forEach(l => {
     const btn = document.createElement('button');
-    btn.textContent = l;
-    btn.className = tf[key] === l ? 'active' : '';
+    btn.textContent = l; btn.className = tf[key] === l ? 'active' : '';
     btn.onclick = () => { tf[key] = l; bar.querySelectorAll('button').forEach(b => b.className = ''); btn.className = 'active'; redraw(); };
     bar.appendChild(btn);
   });
 }
-
 function baseOpts() {
   return {
     responsive: true, maintainAspectRatio: true,
@@ -229,58 +255,27 @@ function baseOpts() {
   };
 }
 
-// --- Projection engine (client-side recalculation) ---
+// --- Projection engine ---
 let projCache = null;
-
 function calcProjections(expenses, income, growthPct) {
   const s = DATA.series;
   const lastIdx = s.dates.length - 1;
   const totalNW = s.net_worth_total[lastIdx];
-
-  const horizonMonths = 30 * 12; // hardcoded 30 years
-  const r = growthPct / 100;
-  const monthlyGrowth = r / 12;
+  const horizonMonths = 30 * 12;
+  const r = growthPct / 100, monthlyGrowth = r / 12;
   const netSavings = (income - expenses) / 12;
-
-  const p50 = [];
-  let nw = totalNW;
-  for (let m = 0; m <= horizonMonths; m++) {
-    p50.push(Math.round(nw));
-    nw = nw * (1 + monthlyGrowth) + Math.max(0, netSavings);
-  }
-
-  // Monte Carlo bands
-  const vol = 0.15 / Math.sqrt(12);
-  const runs = 200;
-  const paths = [];
+  const p50 = []; let nw = totalNW;
+  for (let m = 0; m <= horizonMonths; m++) { p50.push(Math.round(nw)); nw = nw * (1 + monthlyGrowth) + Math.max(0, netSavings); }
+  const vol = 0.15 / Math.sqrt(12); const runs = 200; const paths = [];
   for (let rn = 0; rn < runs; rn++) {
-    const path = [];
-    let val = totalNW;
-    for (let m = 0; m <= horizonMonths; m++) {
-      path.push(Math.round(val));
-      const shock = randn_bm() * vol;
-      val = val * Math.exp((monthlyGrowth - 0.5 * vol * vol) + shock) + Math.max(0, netSavings);
-    }
+    const path = []; let val = totalNW;
+    for (let m = 0; m <= horizonMonths; m++) { path.push(Math.round(val)); val = val * Math.exp((monthlyGrowth - 0.5*vol*vol) + randn_bm()*vol) + Math.max(0, netSavings); }
     paths.push(path);
   }
-
   const p10 = [], p90 = [];
-  for (let m = 0; m <= horizonMonths; m++) {
-    const vals = paths.map(p => p[m]).sort((a, b) => a - b);
-    p10.push(vals[Math.floor(runs * 0.10)]);
-    p90.push(vals[Math.floor(runs * 0.90)]);
-  }
-
-  // Build future dates only (no actuals concatenated)
-  const lastDate = new Date(s.dates[lastIdx]);
-  // Start at month 0 (today) so the projection line starts at current NW
-  const projDates = [];
-  for (let m = 0; m <= horizonMonths; m++) {
-    const d = new Date(lastDate);
-    d.setMonth(d.getMonth() + m);
-    projDates.push(d.toISOString().slice(0, 10));
-  }
-
+  for (let m = 0; m <= horizonMonths; m++) { const v = paths.map(p => p[m]).sort((a,b)=>a-b); p10.push(v[Math.floor(runs*0.10)]); p90.push(v[Math.floor(runs*0.90)]); }
+  const lastDate = new Date(s.dates[lastIdx]); const projDates = [];
+  for (let m = 0; m <= horizonMonths; m++) { const d = new Date(lastDate); d.setMonth(d.getMonth()+m); projDates.push(d.toISOString().slice(0,10)); }
   return { projDates, p50, p10, p90 };
 }
 
@@ -288,6 +283,7 @@ function drawProjectionsFn() {
   killChart('projections');
   if (!projCache) recalcProjections();
   const p = projCache;
+  const milestones = buildMilestones(p);
 
   charts.projections = new Chart(document.getElementById('chartProjections').getContext('2d'), {
     type: 'line',
@@ -297,9 +293,25 @@ function drawProjectionsFn() {
         { label: 'Lower range (p10)', data: p.p10, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
         { label: 'Most likely (median)', data: p.p50, borderColor: CC.projP50, fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
         { label: 'Realistic range (80% of outcomes)', data: p.p90, borderColor: 'transparent', backgroundColor: CC.projBand, fill: '-1', tension: 0.3, pointRadius: 0 },
+        ...milestones.filter(m => m.type === 'liquid' || m.type === 'fire').map(m => ({
+          label: m.name,
+          data: new Array(p.projDates.length).fill(m.value),
+          borderColor: m.status === 'done' ? CC.milestoneDone : (m.status === 'close' ? CC.milestoneClose : CC.milestoneFar),
+          borderDash: [3, 3], borderWidth: 1, fill: false, pointRadius: 0,
+        })),
       ]
     },
-    options: baseOpts(),
+    options: {
+      ...baseOpts(),
+      plugins: {
+        legend: {
+          labels: {
+            color: '#8b949e', font: { size: 10 },
+            filter: function(item) { return !item.text.startsWith('$'); },
+          }
+        }
+      }
+    },
   });
 }
 
@@ -309,9 +321,9 @@ function recalcProjections() {
   const growth = parseFloat(document.getElementById('projGrowth').value) || 7;
   projCache = calcProjections(expenses, income, growth);
   drawProjectionsFn();
+  buildAchievementPanel();
 }
 
-// Normal random (Box-Muller)
 function randn_bm() {
   let u = 0, v = 0;
   while (u === 0) u = Math.random();
@@ -319,11 +331,154 @@ function randn_bm() {
   return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
 }
 
+// --- Milestones ---
+function getCurrentValues() {
+  const s = DATA.series; const li = s.dates.length - 1;
+  return {
+    liquidNW: s.net_worth_ex_housing[li],
+    totalNW: s.net_worth_total[li],
+    retirement: s.retirement[li],
+    nonRetirement: s.non_retirement[li],
+    homeEquity: s.net_worth_total[li] - s.net_worth_ex_housing[li], // approximate
+  };
+}
+
+function buildMilestones(proj) {
+  const cur = getCurrentValues();
+  const expenses = parseFloat(document.getElementById('projExpenses').value) || 96000;
+
+  function findCrossMonth(target) {
+    for (let m = 0; m < proj.p50.length; m++) { if (proj.p50[m] >= target) return m; }
+    return -1;
+  }
+  function crossDate(months) {
+    if (months < 0) return null;
+    const d = new Date(proj.projDates[months]);
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+  }
+
+  const milestones = [];
+
+  // Liquid NW milestones ($1M-$10M)
+  [1e6, 2e6, 3e6, 4e6, 5e6, 7.5e6, 10e6].forEach(v => {
+    const pct = cur.liquidNW / v;
+    const m = findCrossMonth(v);
+    milestones.push({
+      type: 'liquid', name: '$' + fmtShort(v) + ' liquid', value: v,
+      current: cur.liquidNW, pct, crossMonths: m, crossDate: crossDate(m),
+      status: cur.liquidNW >= v ? 'done' : (pct >= 0.75 ? 'close' : 'far'),
+    });
+  });
+
+  // Home equity %
+  const homeEq = cur.homeEquity;
+  const mortgageRemaining = homeEq > 0 ? homeEq : (cur.totalNW - cur.liquidNW); // rough
+  // We need real mortgage data — approximate from the difference
+  // For now: home equity % of total home value isn't known without the raw data.
+  // We'll estimate: if liquid NW = total NW - homeEquity, then homeEquity is what we have.
+  // 50%/75%/100% ownership means home equity >= 50% of (home equity + mortgage)
+  // Since we don't have mortgage directly, skip for now — user will add real data later.
+  // Placeholder: show as "need real mortgage data"
+  if (DATA.current && DATA.current.mortgage_balance != null) {
+    const totalHome = homeEq + DATA.current.mortgage_balance;
+    [0.50, 0.75, 1.0].forEach(pct => {
+      const needed = totalHome * pct;
+      const curPct = totalHome > 0 ? homeEq / totalHome : 0;
+      milestones.push({
+        type: 'home', name: (pct*100).toFixed(0) + '% home equity', value: needed,
+        current: homeEq, pct: curPct / pct, crossMonths: -1, crossDate: null,
+        status: curPct >= pct ? 'done' : (curPct >= pct*0.75 ? 'close' : 'far'),
+      });
+    });
+  }
+
+  // FIRE milestones
+  const fireTargets = [
+    { name: 'Coast FIRE', mult: 0, desc: 'investments will grow to cover retirement by 65' },
+    { name: 'Lean FIRE', mult: 25, desc: '25× annual expenses' },
+    { name: 'Full FIRE', mult: 33, desc: '33× expenses (3% SWR)' },
+    { name: 'Fat FIRE', mult: 40, desc: '40× expenses — luxury forever' },
+  ];
+  fireTargets.forEach(ft => {
+    const target = ft.mult > 0 ? expenses * ft.mult : cur.liquidNW; // Coast FIRE: use current as target (always "not yet" unless we calculate properly)
+    const pct = ft.mult > 0 ? cur.liquidNW / target : 0.5;
+    const m = ft.mult > 0 ? findCrossMonth(target) : -1;
+    milestones.push({
+      type: 'fire', name: ft.name, value: target, desc: ft.desc,
+      current: ft.mult > 0 ? cur.liquidNW : 0, pct,
+      crossMonths: m, crossDate: crossDate(m),
+      status: ft.mult > 0 && cur.liquidNW >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far'),
+    });
+  });
+
+  // Bridge fund (non-retirement liquid / expenses)
+  [1, 3, 5].forEach(yrs => {
+    const target = expenses * yrs;
+    const pct = cur.nonRetirement / target;
+    milestones.push({
+      type: 'bridge', name: yrs + '-year bridge', value: target,
+      desc: yrs + ' years of expenses in non-retirement accounts',
+      current: cur.nonRetirement, pct,
+      crossMonths: -1, crossDate: null,
+      status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far'),
+    });
+  });
+
+  return milestones;
+}
+
+// --- Achievements panel ---
+function buildAchievementPanel() {
+  if (!projCache) return;
+  const milestones = buildMilestones(projCache);
+  const panel = document.getElementById('achPanel');
+  if (!panel) return;
+
+  const groups = [
+    { key: 'liquid', title: '💰 Liquid Net Worth' },
+    { key: 'fire', title: '🔥 FIRE Milestones' },
+    { key: 'bridge', title: '🌉 Bridge Fund (non-retirement)' },
+    { key: 'home', title: '🏠 Home Equity' },
+  ];
+
+  let html = '';
+  groups.forEach(g => {
+    const items = milestones.filter(m => m.type === g.key);
+    if (items.length === 0) return;
+    html += '<div class="ach-group-title">' + g.title + '</div>';
+    items.forEach(m => {
+      const pct = Math.min(100, Math.max(0, m.pct * 100));
+      const barClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
+      const statusText = m.status === 'done' ? '✅' : (m.status === 'close' ? '🔶' : '⬜');
+      const dateText = m.crossDate ? 'Est. ' + m.crossDate : (m.status === 'done' ? 'Done' : '');
+      html += '<div class="milestone-row">';
+      html += '<div class="milestone-icon">' + statusText + '</div>';
+      html += '<div class="milestone-name">' + m.name + (m.desc ? '<div style="font-size:0.68rem;color:#8b949e">' + m.desc + '</div>' : '') + '</div>';
+      html += '<div class="milestone-progress"><div class="progress-bar-bg"><div class="progress-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div></div>';
+      html += '<div class="milestone-date">' + dateText + '</div>';
+      html += '<div class="milestone-status ' + barClass + '">' + pct.toFixed(0) + '%</div>';
+      html += '</div>';
+    });
+  });
+  panel.innerHTML = html || '<div style="padding:12px;color:#8b949e">Add real data to see achievements.</div>';
+}
+
+function toggleAchievements() {
+  const panel = document.getElementById('achPanel');
+  const caret = document.getElementById('achCaret');
+  if (panel.style.display === 'none') {
+    panel.style.display = 'block';
+    caret.textContent = '▼';
+    buildAchievementPanel();
+  } else {
+    panel.style.display = 'none';
+    caret.textContent = '▶';
+  }
+}
+
 // --- Main ---
 function initDashboard() {
   const s = DATA.series;
-
-  // Stats
   const lastIdx = s.dates.length - 1;
   const prevIdx = Math.max(0, lastIdx - 1);
   const nw = s.net_worth_total[lastIdx];
@@ -341,17 +496,12 @@ function initDashboard() {
     { l: 'Snapshots', v: s.dates.length, d: '', pos: true },
   ].map(st => `<div class="stat-box"><div class="label">${st.l}</div><div class="value">${st.v}</div>${st.d ? `<div class="delta ${st.pos?'pos':'neg'}">${st.d}</div>` : ''}</div>`).join('');
 
-  // CHART 1: Net Worth (total + ex-housing, one chart)
   makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
   drawNW();
-
-  // CHART 2: Projections
   document.getElementById('projExpenses').value = '96000';
   document.getElementById('projIncome').value = '200000';
   document.getElementById('projGrowth').value = '7';
   recalcProjections();
-
-  // CHART 3: Retirement stacked
   makeTFBar('timeframeBarStacked', 'stacked', TF_MAIN, drawStacked);
   drawStacked();
 }
