@@ -67,7 +67,7 @@
 </head>
 <body>
 <div id="gate">
-  <form onsubmit="return checkPassword()">
+  <form onsubmit="event.preventDefault(); checkPassword(); return false;">
     <h1 style="text-align:center;margin-bottom:8px;">🔒 Net Worth</h1>
     <input type="password" id="pw-input" placeholder="Enter password" autofocus>
     <button type="submit">Unlock</button>
