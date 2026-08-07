@@ -175,18 +175,6 @@
 <script>
 const DATA = __CHART_DATA_JSON__;
 
-(function() {
-  if (!DATA.password_enabled) {
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    if (typeof Chart !== 'undefined') {
-      initDashboard();
-    } else {
-      window.addEventListener('load', initDashboard);
-    }
-  }
-})();
-
 // --- Password gate ---
 function sha256(str) {
   const encoder = new TextEncoder();
@@ -547,6 +535,15 @@ function drawStacked() {
     },
   });
 }
+
+// --- Auto-init when password disabled ---
+(function() {
+  if (!DATA.password_enabled) {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    initDashboard();
+  }
+})();
 </script>
 </body>
 </html>
