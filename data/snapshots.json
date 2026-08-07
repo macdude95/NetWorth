@@ -166,7 +166,9 @@
       },
       "liabilities": {
         "mortgage_balance": 261000
-      }
+      },
+      "income": 200000,
+      "expenses": 96000
     }
   ]
 }
