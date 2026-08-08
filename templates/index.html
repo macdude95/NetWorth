@@ -278,7 +278,6 @@ function drawProjectionsFn() {
   killChart('projections');
   if (!projCache) recalcProjections();
   const p = projCache;
-  const milestones = buildMilestones(p);
 
   charts.projections = new Chart(document.getElementById('chartProjections').getContext('2d'), {
     type: 'line',
@@ -288,24 +287,10 @@ function drawProjectionsFn() {
         { label: 'Lower range (p10)', data: p.p10, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
         { label: 'Most likely (median)', data: p.p50, borderColor: CC.projP50, fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
         { label: 'Realistic range (80% of outcomes)', data: p.p90, borderColor: 'transparent', backgroundColor: CC.projBand, fill: '-1', tension: 0.3, pointRadius: 0 },
-        ...milestones.filter(m => m.type === 'liquid' || m.type === 'fire').map(m => ({
-          label: m.name,
-          data: new Array(p.projDates.length).fill(m.value),
-          borderColor: m.status === 'done' ? CC.milestoneDone : (m.status === 'close' ? CC.milestoneClose : CC.milestoneFar),
-          borderDash: [3, 3], borderWidth: 1, fill: false, pointRadius: 0,
-        })),
       ]
     },
     options: {
       ...baseOpts(),
-      plugins: {
-        legend: {
-          labels: {
-            color: '#8b949e', font: { size: 10 },
-            filter: function(item) { return !item.text.startsWith('$'); },
-          }
-        }
-      }
     },
   });
 }
