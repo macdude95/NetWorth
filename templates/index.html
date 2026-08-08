@@ -441,6 +441,18 @@ document.addEventListener('click', function(e) {
     chart.tooltip.setActiveElements([], {x:0,y:0});
   }
 }, true);
+
+// --- Tooltip: force-hide after touch end (fixes stuck tooltip after drag) ---
+document.addEventListener('touchend', function(e) {
+  var canvas = e.target.closest('canvas');
+  if (!canvas) return;
+  var chart = charts[canvas.id === 'chartNetWorth' ? 'nw' : canvas.id === 'chartProjections' ? 'projections' : canvas.id === 'chartStacked' ? 'stacked' : null];
+  if (!chart) return;
+  // Small delay to let Chart.js finish its internal touch handling
+  setTimeout(function() {
+    try { chart.tooltip.setActiveElements([], {x:0,y:0}); } catch(_) {}
+  }, 50);
+});
 </script>
 </body>
 </html>
