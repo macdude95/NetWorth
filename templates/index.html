@@ -302,13 +302,21 @@ function drawProjectionsFn() {
     data: {
       labels: p.projDates,
       datasets: [
-        { label: 'Optimistic (p90)', data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
-        { label: 'Median forecast', data: p.median, borderColor: CC.projP50, fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-        { label: '80% confidence range', data: p.lower, borderColor: 'transparent', backgroundColor: CC.projBand, fill: '-1', tension: 0.3, pointRadius: 0 },
+        { data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+        { label: 'Median forecast', data: p.median, borderColor: '#a5d6ff', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+        { label: '80% range', data: p.lower, borderColor: 'transparent', backgroundColor: 'rgba(165,214,255,0.15)', fill: '-1', tension: 0.3, pointRadius: 0 },
       ]
     },
     options: {
       ...baseOpts(),
+      plugins: {
+        legend: {
+          labels: {
+            color: '#8b949e', font: { size: 10 },
+            filter: function(item) { return item.text !== ''; },
+          }
+        }
+      }
     },
   });
 }
@@ -547,7 +555,7 @@ function drawStacked() {
 // --- Hide tooltips on touch end (prevents persistent tooltips on mobile) ---
 document.addEventListener('touchend', function() {
   Object.values(charts).forEach(c => {
-    if (c && c.tooltip) c.tooltip.setActiveElements([], { x: 0, y: 0 });
+    if (c) { c.setActiveElements([]); c.update('none'); }
   });
 });
 </script>

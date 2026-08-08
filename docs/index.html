@@ -171,7 +171,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "d767b8d6d415cdd781cd247f22a2f728a830a8298117bf85bc2499bf9ccaa60d", "salt": "8fa4d88515056406a70dcad7ae111bbf"}, "password_enabled": false};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "6f9f8e9ec9a97aadbce7aefd434ab567f7960f55c8e9922568cc25abff2c9b41", "salt": "819d3f725638536efd30e2824d80d47a"}, "password_enabled": false};
 
 // --- Password gate ---
 function sha256(str) {
@@ -302,13 +302,21 @@ function drawProjectionsFn() {
     data: {
       labels: p.projDates,
       datasets: [
-        { label: 'Optimistic (p90)', data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
-        { label: 'Median forecast', data: p.median, borderColor: CC.projP50, fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-        { label: '80% confidence range', data: p.lower, borderColor: 'transparent', backgroundColor: CC.projBand, fill: '-1', tension: 0.3, pointRadius: 0 },
+        { data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+        { label: 'Median forecast', data: p.median, borderColor: '#a5d6ff', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+        { label: '80% range', data: p.lower, borderColor: 'transparent', backgroundColor: 'rgba(165,214,255,0.15)', fill: '-1', tension: 0.3, pointRadius: 0 },
       ]
     },
     options: {
       ...baseOpts(),
+      plugins: {
+        legend: {
+          labels: {
+            color: '#8b949e', font: { size: 10 },
+            filter: function(item) { return item.text !== ''; },
+          }
+        }
+      }
     },
   });
 }
@@ -547,7 +555,7 @@ function drawStacked() {
 // --- Hide tooltips on touch end (prevents persistent tooltips on mobile) ---
 document.addEventListener('touchend', function() {
   Object.values(charts).forEach(c => {
-    if (c && c.tooltip) c.tooltip.setActiveElements([], { x: 0, y: 0 });
+    if (c) { c.setActiveElements([]); c.update('none'); }
   });
 });
 </script>
