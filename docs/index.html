@@ -164,7 +164,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "cd81de94c87433082f110d565b864c195a442a64213e56557f294f77760007bc", "salt": "4a2439267c956619b286a7bba84f37e9"}, "password_enabled": false, "chart_library": "apexcharts"};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "14d8a0253459d4ad63df570e200a14a86cd4c0cbc1ae2ff117a93462caa83926", "salt": "78611aa9b293145e93f1ab19dfb0e552"}, "password_enabled": false, "chart_library": "apexcharts"};
 
 // --- Password gate ---
 function sha256(str) {
@@ -280,11 +280,13 @@ function drawNW_apex() {
   const opts = apexOpts({
     type: 'line',
     series: [
-      { name: 'Total', data: f.series[0].map((v,i) => ({x: f.dates[i], y: v})), color: CC.total },
-      { name: 'Excl. Home Equity', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: CC.exHousing },
+      { name: 'Total', data: f.series[0].map((v,i) => ({x: f.dates[i], y: v})), color: '#4dabf7' },
+      { name: 'Excl. Home', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: '#69db7c' },
     ],
-    stroke: { curve: 'straight', width: [2, 2], dashArray: [0, 5] },
-    fill: { type: ['gradient'], gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.3, opacityTo: 0 } },
+    stroke: { curve: 'straight', width: [2.5, 2], dashArray: [0, 5] },
+    markers: { size: [0, 0], strokeWidth: 0 },
+    fill: { type: ['gradient'], gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.25, opacityTo: 0.02 } },
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', markers: { width: 20, height: 3, radius: 1 } },
   });
   const chart = new ApexCharts(document.getElementById('chartNetWorth'), opts);
   chart.render();
@@ -300,25 +302,28 @@ function drawProjections_apex() {
       {
         name: '80% range',
         data: p.lower.map((v,i) => ({x: p.projDates[i], y: v})),
-        color: '#a5d6ff',
         type: 'area',
-        fill: { type: 'gradient', gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.25, opacityTo: 0.05 } },
+        color: '#74c0fc',
+        fill: { type: 'gradient', gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.2, opacityTo: 0.02 } },
         stroke: { width: 0 },
+        legend: { show: false },
       },
       {
-        name: 'Optimistic',
+        name: 'Range top',
         data: p.upper.map((v,i) => ({x: p.projDates[i], y: v})),
         color: 'transparent',
         stroke: { width: 0 },
         legend: { show: false },
       },
       {
-        name: 'Median forecast',
+        name: 'Median',
         data: p.median.map((v,i) => ({x: p.projDates[i], y: v})),
-        color: '#a5d6ff',
-        stroke: { width: 2 },
+        color: '#74c0fc',
+        stroke: { width: 2.5, curve: 'straight' },
+        markers: { size: 0 },
       },
     ],
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', markers: { width: 20, height: 3, radius: 1 } },
   });
   const chart = new ApexCharts(document.getElementById('chartProjections'), opts);
   chart.render();
@@ -327,26 +332,25 @@ function drawProjections_apex() {
 
 function drawStacked_apex() {
   const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tf.stacked]);
-  const opts = apexOpts({
+  const opts = {
     chart: {
-      type: 'bar',
-      stacked: true,
-      background: CC.bg,
-      foreColor: CC.tick,
-      toolbar: { show: false },
-      zoom: { enabled: false },
+      type: 'bar', stacked: true,
+      background: CC.bg, foreColor: CC.tick,
+      toolbar: { show: false }, zoom: { enabled: false },
+      animations: { enabled: false },
     },
     series: [
-      { name: 'Non-Retirement', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: CC.nonRetirement },
-      { name: 'Retirement', data: f.series[0].map((v,i) => ({x: f.dates[i], y: v})), color: CC.retirement },
+      { name: 'Non-Retirement', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: '#4dabf7' },
+      { name: 'Retirement', data: f.series[0].map((v,i) => ({x: f.dates[i], y: v})), color: '#fcc419' },
     ],
-    plotOptions: { bar: { borderRadius: 2, columnWidth: '70%' } },
-    xaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' } }, axisBorder: { color: CC.grid }, axisTicks: { color: CC.grid } },
+    plotOptions: { bar: { borderRadius: 0, columnWidth: '60%', dataLabels: { position: 'center' } } },
+    dataLabels: { enabled: false },
+    xaxis: { labels: { style: { colors: CC.tick, fontSize: '9px' }, rotate: -45, maxItems: 8 }, axisBorder: { color: CC.grid }, axisTicks: { color: CC.grid } },
     yaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' }, formatter: v => fmtShort(v) } },
     grid: { borderColor: CC.grid, strokeDashArray: 2 },
     tooltip: { theme: 'dark', x: { format: 'yyyy-MM-dd' }, y: { formatter: v => fmtFull(v) } },
-    legend: { labels: { colors: CC.tick }, fontSize: '11px' },
-  });
+    legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', labels: { colors: CC.tick }, markers: { width: 12, height: 12, radius: 2 } },
+  };
   const chart = new ApexCharts(document.getElementById('chartStacked'), opts);
   chart.render();
   charts.stacked = chart;
