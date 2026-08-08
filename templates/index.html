@@ -570,6 +570,17 @@ function initDashboard() {
     initDashboard();
   }
 })();
+
+// --- Chart.js tooltip fix: hide tooltip when tapping outside canvas (mobile) ---
+document.addEventListener('click', function(e) {
+  if (currentLib !== 'chartjs') return;
+  const clickedOnCanvas = e.target.closest('canvas');
+  if (!clickedOnCanvas) {
+    Object.values(charts).forEach(c => {
+      try { if (c && c.tooltip) c.tooltip.setActiveElements([], {x:0,y:0}); } catch(_) {}
+    });
+  }
+});
 </script>
 </body>
 </html>
