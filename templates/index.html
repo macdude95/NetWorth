@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Net Worth Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -17,8 +16,9 @@
     h1 { font-size: 1.4rem; margin-bottom: 4px; color: #f0f6fc; }
     .subtitle { font-size: 0.8rem; color: #8b949e; margin-bottom: 16px; }
     .section { margin-bottom: 28px; }
-    .section h2 { font-size: 1.05rem; color: #f0f6fc; margin-bottom: 10px; border-bottom: 1px solid #21262d; padding-bottom: 4px; display:flex; justify-content:space-between; align-items:center; }
+    .section h2 { font-size: 1.05rem; color: #f0f6fc; margin-bottom: 10px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }
     .chart-wrapper { position: relative; width: 100%; background: #161b22; border-radius: 8px; padding: 12px; }
+    canvas { width: 100% !important; max-height: 350px; }
     .timeframe-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
     .timeframe-bar button {
       background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
@@ -69,12 +69,6 @@
       background: #238636; color: #fff; border: none; border-radius: 6px;
       padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
     }
-    .lib-toggle {
-      font-size: 0.65rem; color: #8b949e; cursor: pointer; user-select: none;
-      padding: 2px 8px; border: 1px solid #30363d; border-radius: 4px;
-      background: #21262d;
-    }
-    .lib-toggle:hover { background: #30363d; }
     .ach-toggle {
       background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
       padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
@@ -126,35 +120,30 @@
   <div class="subtitle" id="dateRange"></div>
   <div class="stats-row" id="statsRow"></div>
 
-  <!-- CHART 1: Net Worth -->
   <div class="section">
-    <h2>Net Worth <span class="lib-toggle" id="libToggle" onclick="toggleLibrary()" title="Switch chart library"></span></h2>
+    <h2>Net Worth</h2>
     <div class="timeframe-bar" id="timeframeBarNW"></div>
-    <div class="chart-wrapper"><div id="chartNetWorth"></div></div>
+    <div class="chart-wrapper"><canvas id="chartNetWorth"></canvas></div>
   </div>
 
-  <!-- CHART 2: Projections -->
   <div class="section" id="projectionSection">
     <h2>Projections (30 years)</h2>
     <div class="proj-controls" id="projControls">
       <label>Investment growth (%/yr) <input type="number" id="projGrowth" value="7" step="0.5" min="0" max="30"></label>
       <button onclick="recalcProjections()">Update</button>
     </div>
-    <div style="font-size:0.72rem;color:#8b949e;margin-bottom:10px;line-height:1.5">
+    <div style="font-size:0.72rem;color:#8b949e;margin-bottom:10px;">
       Starting from your current net worth, with income and expenses from your latest snapshot.
-      The <b>solid line</b> is the median forecast; the <b>shaded band</b> covers 80% of possible outcomes.
     </div>
-    <div class="chart-wrapper"><div id="chartProjections"></div></div>
+    <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
   </div>
 
-  <!-- CHART 3: Retirement vs Non-Retirement -->
   <div class="section">
     <h2>Retirement vs Non-Retirement</h2>
     <div class="timeframe-bar" id="timeframeBarStacked"></div>
-    <div class="chart-wrapper"><div id="chartStacked"></div></div>
+    <div class="chart-wrapper"><canvas id="chartStacked"></canvas></div>
   </div>
 
-  <!-- ACHIEVEMENTS -->
   <div class="section">
     <button class="ach-toggle" onclick="toggleAchievements()">
       🏆 Achievements <span id="achCaret" style="font-size:0.7rem;">▶</span>
@@ -166,7 +155,6 @@
 <script>
 const DATA = __CHART_DATA_JSON__;
 
-// --- Password gate ---
 function sha256(str) {
   const encoder = new TextEncoder();
   return crypto.subtle.digest('SHA-256', encoder.encode(str))
@@ -184,31 +172,7 @@ async function checkPassword() {
   }
 }
 
-// --- Library toggle ---
-let currentLib = DATA.chart_library || 'apexcharts';
-document.getElementById('libToggle').textContent = currentLib === 'apexcharts' ? 'Apex' : 'Chart.js';
-
-function toggleLibrary() {
-  currentLib = currentLib === 'apexcharts' ? 'chartjs' : 'apexcharts';
-  document.getElementById('libToggle').textContent = currentLib === 'apexcharts' ? 'Apex' : 'Chart.js';
-  destroyAllCharts();
-  initDashboard();
-}
-
-function destroyAllCharts() {
-  ['nw','projections','stacked'].forEach(k => {
-    try { ApexCharts.exec(k, 'destroy'); } catch(e) {}
-    try { if (charts[k]) { charts[k].destroy(); charts[k] = null; } } catch(e) {}
-  });
-  charts = {};
-}
-
-// --- Colors ---
-const CC = {
-  total: '#1f6feb', exHousing: '#3fb950', retirement: '#d29922', nonRetirement: '#58a6ff',
-  projP50: '#a5d6ff', projBand: 'rgba(88,166,255,0.25)',
-  grid: '#21262d', tick: '#8b949e', bg: '#161b22',
-};
+const CC = { total: '#1f6feb', exHousing: '#3fb950', retirement: '#d29922', nonRetirement: '#58a6ff' };
 
 function fmtShort(n) {
   if (n == null || isNaN(n)) return 'N/A';
@@ -218,14 +182,7 @@ function fmtShort(n) {
   return n.toFixed(0);
 }
 
-function fmtFull(n) {
-  if (n == null || isNaN(n)) return '';
-  return '$' + n.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0});
-}
-
-// --- Timeframes ---
 const TF_MAIN = { 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
-
 function filterDates(dates, seriesArr, tf) {
   if (tf === 'all') return { dates, series: seriesArr };
   const lastDate = new Date(dates[dates.length - 1]);
@@ -238,103 +195,18 @@ function filterDates(dates, seriesArr, tf) {
 }
 
 let charts = {};
-let tf = { nw: 'All', stacked: 'All' };
+let tfState = { nw: 'All', stacked: 'All' };
 
 function makeTFBar(parentId, key, labels, redraw) {
   const bar = document.getElementById(parentId);
   bar.innerHTML = '';
   Object.keys(labels).forEach(l => {
     const btn = document.createElement('button');
-    btn.textContent = l; btn.className = tf[key] === l ? 'active' : '';
-    btn.onclick = () => { tf[key] = l; bar.querySelectorAll('button').forEach(b => b.className = ''); btn.className = 'active'; redraw(); };
+    btn.textContent = l; btn.className = tfState[key] === l ? 'active' : '';
+    btn.onclick = () => { tfState[key] = l; bar.querySelectorAll('button').forEach(b => b.className = ''); btn.className = 'active'; redraw(); };
     bar.appendChild(btn);
   });
 }
-
-// --- ApexCharts dark theme defaults ---
-function apexOpts(extra) {
-  return {
-    chart: {
-      type: extra.type || 'line',
-      background: CC.bg,
-      foreColor: CC.tick,
-      toolbar: { show: false },
-      zoom: { enabled: false },
-      animations: { enabled: true, speed: 300 },
-    },
-    grid: { borderColor: CC.grid, strokeDashArray: 2 },
-    xaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' } }, axisBorder: { color: CC.grid }, axisTicks: { color: CC.grid } },
-    yaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' }, formatter: v => fmtShort(v) } },
-    tooltip: { theme: 'dark', x: { format: 'yyyy-MM-dd' } },
-    legend: { labels: { colors: CC.tick }, fontSize: '11px' },
-    ...extra,
-  };
-}
-
-// === APEXCHARTS RENDERERS ===
-
-function drawNW_apex() {
-  const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tf.nw]);
-  const opts = apexOpts({
-    type: 'line',
-    series: [
-      { name: 'Total', data: f.series[0].map((v,i) => ({x: f.dates[i], y: v})), color: '#4dabf7' },
-      { name: 'Excl. Home', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: '#69db7c' },
-    ],
-    stroke: { curve: 'straight', width: [2.5, 2], dashArray: [0, 5] },
-    markers: { size: 0, hover: { size: 4 } },
-    fill: { type: ['gradient'], gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.25, opacityTo: 0.02 } },
-    legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', markers: { width: 20, height: 3, radius: 1 } },
-  });
-  const chart = new ApexCharts(document.getElementById('chartNetWorth'), opts);
-  chart.render();
-  charts.nw = chart;
-}
-
-function drawProjections_apex() {
-  if (!projCache) recalcProjections();
-  const p = projCache;
-  const opts = apexOpts({
-    type: 'line',
-    series: [
-      { name: 'Projected', data: p.median.map((v,i) => ({x: p.projDates[i], y: v})), color: '#4dabf7' },
-    ],
-    stroke: { width: 3, curve: 'straight' },
-    markers: { size: 0 },
-    legend: { show: false },
-  });
-  const chart = new ApexCharts(document.getElementById('chartProjections'), opts);
-  chart.render();
-  charts.projections = chart;
-}
-
-function drawStacked_apex() {
-  const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tf.stacked]);
-  const opts = {
-    chart: {
-      type: 'bar', stacked: true,
-      background: CC.bg, foreColor: CC.tick,
-      toolbar: { show: false }, zoom: { enabled: false },
-      animations: { enabled: false },
-    },
-    series: [
-      { name: 'Non-Retirement', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: '#4dabf7' },
-      { name: 'Retirement', data: f.series[0].map((v,i) => ({x: f.dates[i], y: v})), color: '#fcc419' },
-    ],
-    plotOptions: { bar: { borderRadius: 0, columnWidth: '60%', dataLabels: { position: 'center' } } },
-    dataLabels: { enabled: false },
-    xaxis: { labels: { style: { colors: CC.tick, fontSize: '9px' }, rotate: -45, maxItems: 8 }, axisBorder: { color: CC.grid }, axisTicks: { color: CC.grid } },
-    yaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' }, formatter: v => fmtShort(v) } },
-    grid: { borderColor: CC.grid, strokeDashArray: 2 },
-    tooltip: { theme: 'dark', x: { format: 'yyyy-MM-dd' }, y: { formatter: v => fmtFull(v) } },
-    legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', labels: { colors: CC.tick }, markers: { width: 12, height: 12, radius: 2 } },
-  };
-  const chart = new ApexCharts(document.getElementById('chartStacked'), opts);
-  chart.render();
-  charts.stacked = chart;
-}
-
-// === CHART.JS RENDERERS ===
 
 function baseOpts() {
   return {
@@ -348,12 +220,9 @@ function baseOpts() {
   };
 }
 
-function drawNW_chartjs() {
-  const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tf.nw]);
-  const container = document.getElementById('chartNetWorth');
-  container.innerHTML = '<canvas></canvas>';
-  const canvas = container.querySelector('canvas');
-  charts.nw = new Chart(canvas.getContext('2d'), {
+function drawNW() {
+  const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tfState.nw]);
+  charts.nw = new Chart(document.getElementById('chartNetWorth'), {
     type: 'line', data: { labels: f.dates, datasets: [
       { label: 'Total', data: f.series[0], borderColor: CC.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2 },
       { label: 'Excl. Home Equity', data: f.series[1], borderColor: CC.exHousing, borderDash: [5,3], fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
@@ -361,25 +230,19 @@ function drawNW_chartjs() {
   });
 }
 
-function drawProjections_chartjs() {
+function drawProjectionsFn() {
   if (!projCache) recalcProjections();
   const p = projCache;
-  const container = document.getElementById('chartProjections');
-  container.innerHTML = '<canvas></canvas>';
-  const canvas = container.querySelector('canvas');
-  charts.projections = new Chart(canvas.getContext('2d'), {
+  charts.projections = new Chart(document.getElementById('chartProjections'), {
     type: 'line', data: { labels: p.projDates, datasets: [
       { label: 'Projected', data: p.median, borderColor: '#4dabf7', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
     ]}, options: baseOpts(),
   });
 }
 
-function drawStacked_chartjs() {
-  const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tf.stacked]);
-  const container = document.getElementById('chartStacked');
-  container.innerHTML = '<canvas></canvas>';
-  const canvas = container.querySelector('canvas');
-  charts.stacked = new Chart(canvas.getContext('2d'), {
+function drawStacked() {
+  const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tfState.stacked]);
+  charts.stacked = new Chart(document.getElementById('chartStacked'), {
     type: 'bar', data: { labels: f.dates, datasets: [
       { label: 'Non-Retirement', data: f.series[1], backgroundColor: CC.nonRetirement, borderRadius: 2 },
       { label: 'Retirement', data: f.series[0], backgroundColor: CC.retirement, borderRadius: 2 },
@@ -393,13 +256,12 @@ function drawStacked_chartjs() {
   });
 }
 
-// === DISPATCH ===
+function destroyAllCharts() {
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+  charts = {};
+}
 
-function drawNW() { return currentLib === 'apexcharts' ? drawNW_apex() : drawNW_chartjs(); }
-function drawProjectionsFn() { return currentLib === 'apexcharts' ? drawProjections_apex() : drawProjections_chartjs(); }
-function drawStacked() { return currentLib === 'apexcharts' ? drawStacked_apex() : drawStacked_chartjs(); }
-
-// --- Projection engine (shared) ---
+// --- Projection engine ---
 let projCache = null;
 function calcProjections(expenses, income, growthPct) {
   const s = DATA.series;
@@ -408,14 +270,13 @@ function calcProjections(expenses, income, growthPct) {
   const horizonMonths = 30 * 12;
   const r = growthPct / 100, monthlyR = r / 12;
   const netSavings = Math.max(0, (income - expenses) / 12);
-  const annualVol = 0.15;
   const median = [];
   let nw = totalNW;
   for (let m = 0; m <= horizonMonths; m++) { median.push(Math.round(nw)); nw = nw * (1 + monthlyR) + netSavings; }
   const upper = [], lower = [];
   for (let m = 0; m <= horizonMonths; m++) {
     const t = m / 12;
-    const sigma = totalNW * annualVol * Math.sqrt(t);
+    const sigma = totalNW * 0.15 * Math.sqrt(t);
     const band = 1.28 * sigma;
     lower.push(Math.round(Math.max(0, median[m] - band)));
     upper.push(Math.round(median[m] + band));
@@ -472,7 +333,7 @@ function buildMilestones(proj) {
       milestones.push({ type: 'home', name: (pct*100).toFixed(0) + '% home equity', value: totalHome * pct, current: cur.homeEquity, pct: curPct / pct, crossMonths: -1, crossDate: null, status: curPct >= pct ? 'done' : (curPct >= pct*0.75 ? 'close' : 'far') });
     });
   }
-  [{ name: 'Coast FIRE', mult: 0, desc: 'investments grow to cover retirement by 65' },{ name: 'Lean FIRE', mult: 25, desc: '25× annual expenses' },{ name: 'Full FIRE', mult: 33, desc: '33× expenses (3% SWR)' },{ name: 'Fat FIRE', mult: 40, desc: '40× expenses — luxury forever' }].forEach(ft => {
+  [{ name: 'Coast FIRE', mult: 0, desc: 'investments grow to cover retirement by 65' },{ name: 'Lean FIRE', mult: 25, desc: '25x annual expenses' },{ name: 'Full FIRE', mult: 33, desc: '33x expenses (3% SWR)' },{ name: 'Fat FIRE', mult: 40, desc: '40x expenses - luxury forever' }].forEach(ft => {
     const target = ft.mult > 0 ? expenses * ft.mult : cur.liquidNW;
     const pct = ft.mult > 0 ? cur.liquidNW / target : 0.5;
     const m = ft.mult > 0 ? findCrossMonth(target) : -1;
@@ -492,10 +353,10 @@ function buildAchievementPanel() {
   const panel = document.getElementById('achPanel');
   if (!panel) return;
   const groups = [
-    { key: 'liquid', title: '\ud83d\udcb0 Liquid Net Worth' },
-    { key: 'fire', title: '\ud83d\udd25 FIRE Milestones' },
-    { key: 'bridge', title: '\ud83c\udf09 Bridge Fund (non-retirement)' },
-    { key: 'home', title: '\ud83c\udfe0 Home Equity' },
+    { key: 'liquid', title: '💰 Liquid Net Worth' },
+    { key: 'fire', title: '🔥 FIRE Milestones' },
+    { key: 'bridge', title: '🌉 Bridge Fund (non-retirement)' },
+    { key: 'home', title: '🏠 Home Equity' },
   ];
   let html = '';
   groups.forEach(g => {
@@ -505,10 +366,10 @@ function buildAchievementPanel() {
     items.forEach(m => {
       const pct = Math.min(100, Math.max(0, m.pct * 100));
       const barClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
-      const statusText = m.status === 'done' ? '\u2705' : (m.status === 'close' ? '\ud83d\udd36' : '\u2b1c');
+      const icon = m.status === 'done' ? '✅' : (m.status === 'close' ? '🔶' : '⬜');
       const dateText = m.crossDate ? 'Est. ' + m.crossDate : (m.status === 'done' ? 'Done' : '');
       html += '<div class="milestone-row">';
-      html += '<div class="milestone-icon">' + statusText + '</div>';
+      html += '<div class="milestone-icon">' + icon + '</div>';
       html += '<div class="milestone-name">' + m.name + (m.desc ? '<div style="font-size:0.68rem;color:#8b949e">' + m.desc + '</div>' : '') + '</div>';
       html += '<div class="milestone-progress"><div class="progress-bar-bg"><div class="progress-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div></div>';
       html += '<div class="milestone-date">' + dateText + '</div>';
@@ -522,38 +383,28 @@ function buildAchievementPanel() {
 function toggleAchievements() {
   const panel = document.getElementById('achPanel');
   const caret = document.getElementById('achCaret');
-  if (panel.style.display === 'none') { panel.style.display = 'block'; caret.textContent = '\u25bc'; buildAchievementPanel(); }
-  else { panel.style.display = 'none'; caret.textContent = '\u25b6'; }
+  if (panel.style.display === 'none') { panel.style.display = 'block'; caret.textContent = '▼'; buildAchievementPanel(); }
+  else { panel.style.display = 'none'; caret.textContent = '▶'; }
 }
 
 // --- Main ---
 function initDashboard() {
   const s = DATA.series;
-  const lastIdx = s.dates.length - 1;
-  const prevIdx = Math.max(0, lastIdx - 1);
-  const nw = s.net_worth_total[lastIdx];
-  const nwPrev = s.net_worth_total[prevIdx];
-  const delta = nw - nwPrev;
-  const deltaPct = nwPrev > 0 ? (delta / nwPrev * 100) : 0;
-  const nwEx = s.net_worth_ex_housing[lastIdx];
-  const ret = s.retirement[lastIdx];
+  const li = s.dates.length - 1;
+  const pi = Math.max(0, li - 1);
+  const nw = s.net_worth_total[li];
+  const delta = nw - s.net_worth_total[pi];
+  const deltaPct = s.net_worth_total[pi] > 0 ? (delta / s.net_worth_total[pi] * 100) : 0;
 
-  document.getElementById('dateRange').textContent = (currentLib === 'apexcharts' ? '[ApexCharts] \u2022 ' : '[Chart.js] \u2022 ') + 'Latest: ' + s.dates[lastIdx] + ' \u00b7 ' + s.dates.length + ' snapshots \u00b7 ' + s.dates[0] + ' \u2192 ' + s.dates[lastIdx];
+  document.getElementById('dateRange').textContent = 'Latest: ' + s.dates[li] + ' · ' + s.dates.length + ' snapshots · ' + s.dates[0] + ' → ' + s.dates[li];
   document.getElementById('statsRow').innerHTML = [
-    { l: 'Net Worth', v: '$'+fmtShort(nw), d: `${delta>=0?'+':''}$${fmtShort(Math.abs(delta))} (${deltaPct>=0?'+':''}${deltaPct.toFixed(1)}%)`, pos: delta>=0 },
-    { l: 'Excl. Home', v: '$'+fmtShort(nwEx), d: '', pos: true },
-    { l: 'Retirement', v: '$'+fmtShort(ret), d: '', pos: true },
+    { l: 'Net Worth', v: '$'+fmtShort(nw), d: (delta>=0?'+':'')+'$'+fmtShort(Math.abs(delta))+' ('+(deltaPct>=0?'+':'')+deltaPct.toFixed(1)+'%)', pos: delta>=0 },
+    { l: 'Excl. Home', v: '$'+fmtShort(s.net_worth_ex_housing[li]), d: '', pos: true },
+    { l: 'Retirement', v: '$'+fmtShort(s.retirement[li]), d: '', pos: true },
     { l: 'Snapshots', v: s.dates.length, d: '', pos: true },
-  ].map(st => '<div class="stat-box"><div class="label">'+st.l+'</div><div class="value">'+st.v+'</div>'+(st.d ? '<div class="delta '+(st.pos?'pos':'neg')+'">'+st.d+'</div>' : '')+'</div>').join('');
+  ].map(st => '<div class="stat-box"><div class="label">'+st.l+'</div><div class="value">'+st.v+'</div>'+(st.d?'<div class="delta '+(st.pos?'pos':'neg')+'">'+st.d+'</div>':'')+'</div>').join('');
 
-  document.getElementById('libToggle').textContent = currentLib === 'apexcharts' ? 'Apex' : 'Chart.js';
-
-  // Clear chart containers (div instead of canvas)
-  ['chartNetWorth','chartProjections','chartStacked'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = '';
-  });
-
+  destroyAllCharts();
   makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
   drawNW();
   document.getElementById('projGrowth').value = '7';
@@ -562,7 +413,6 @@ function initDashboard() {
   drawStacked();
 }
 
-// --- Auto-init when password disabled ---
 (function() {
   if (!DATA.password_enabled) {
     document.getElementById('gate').style.display = 'none';
@@ -571,16 +421,26 @@ function initDashboard() {
   }
 })();
 
-// --- Chart.js tooltip fix: hide tooltip when tapping outside canvas (mobile) ---
+// --- Tooltip: tap outside any canvas dismisses all tooltips ---
 document.addEventListener('click', function(e) {
-  if (currentLib !== 'chartjs') return;
-  const clickedOnCanvas = e.target.closest('canvas');
-  if (!clickedOnCanvas) {
+  if (!e.target.closest('canvas')) {
     Object.values(charts).forEach(c => {
       try { if (c && c.tooltip) c.tooltip.setActiveElements([], {x:0,y:0}); } catch(_) {}
     });
   }
 });
+
+// --- Tooltip: second tap on same canvas toggles tooltip off (capture phase) ---
+document.addEventListener('click', function(e) {
+  var canvas = e.target.closest('canvas');
+  if (!canvas) return;
+  var chart = charts[canvas.id === 'chartNetWorth' ? 'nw' : canvas.id === 'chartProjections' ? 'projections' : canvas.id === 'chartStacked' ? 'stacked' : null];
+  if (!chart || !chart.tooltip) return;
+  var active = chart.tooltip.getActiveElements();
+  if (active && active.length) {
+    chart.tooltip.setActiveElements([], {x:0,y:0});
+  }
+}, true);
 </script>
 </body>
 </html>
