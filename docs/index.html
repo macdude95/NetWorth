@@ -164,7 +164,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "3cdd8c07f0efe3487e0fb53aa3c5d116cc41d72dc9497ab2b634884dfd947b1f", "salt": "1c7168d3d72b9290265b4fec883ee5cb"}, "password_enabled": false, "chart_library": "apexcharts"};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "31b737c42df4310949dda23a3500f1d29242ad96b80f96acbee3576df5f129a8", "salt": "e75b080916a40078ba0edd40989c7fc4"}, "password_enabled": false, "chart_library": "apexcharts"};
 
 // --- Password gate ---
 function sha256(str) {
@@ -262,8 +262,6 @@ function apexOpts(extra) {
       zoom: { enabled: false },
       animations: { enabled: true, speed: 300 },
     },
-    stroke: { curve: 'straight', width: extra.strokeWidth || 2 },
-    markers: { size: extra.markers || 2 },
     grid: { borderColor: CC.grid, strokeDashArray: 2 },
     xaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' } }, axisBorder: { color: CC.grid }, axisTicks: { color: CC.grid } },
     yaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' }, formatter: v => fmtShort(v) } },
@@ -305,24 +303,22 @@ function drawProjections_apex() {
         type: 'area',
         color: '#4dabf7',
         fill: { type: 'gradient', gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.2, opacityTo: 0.02 } },
-        stroke: { width: 0 },
         legend: { show: false },
       },
       {
         name: 'Range top',
         data: p.upper.map((v,i) => ({x: p.projDates[i], y: v})),
         color: 'transparent',
-        stroke: { width: 0 },
         legend: { show: false },
       },
       {
         name: 'Median',
         data: p.median.map((v,i) => ({x: p.projDates[i], y: v})),
         color: '#4dabf7',
-        stroke: { width: 3, curve: 'straight' },
         markers: { size: 0 },
       },
     ],
+    stroke: { width: [0, 0, 3], curve: 'straight' },
     legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', markers: { width: 20, height: 3, radius: 1 } },
   });
   const chart = new ApexCharts(document.getElementById('chartProjections'), opts);
