@@ -284,7 +284,7 @@ function drawNW_apex() {
       { name: 'Excl. Home', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: '#69db7c' },
     ],
     stroke: { curve: 'straight', width: [2.5, 2], dashArray: [0, 5] },
-    markers: { size: [0, 0], strokeWidth: 0 },
+    markers: { size: 0, hover: { size: 4 } },
     fill: { type: ['gradient'], gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.25, opacityTo: 0.02 } },
     legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', markers: { width: 20, height: 3, radius: 1 } },
   });
@@ -303,7 +303,7 @@ function drawProjections_apex() {
         name: '80% range',
         data: p.lower.map((v,i) => ({x: p.projDates[i], y: v})),
         type: 'area',
-        color: '#74c0fc',
+        color: '#4dabf7',
         fill: { type: 'gradient', gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.2, opacityTo: 0.02 } },
         stroke: { width: 0 },
         legend: { show: false },
@@ -318,8 +318,8 @@ function drawProjections_apex() {
       {
         name: 'Median',
         data: p.median.map((v,i) => ({x: p.projDates[i], y: v})),
-        color: '#74c0fc',
-        stroke: { width: 2.5, curve: 'straight' },
+        color: '#4dabf7',
+        stroke: { width: 3, curve: 'straight' },
         markers: { size: 0 },
       },
     ],
