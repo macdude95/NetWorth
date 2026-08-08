@@ -133,6 +133,7 @@ def main():
             "salt": stored_salt,
         },
         "password_enabled": False,
+        "tooltip_mode": "dismiss-button",  # "workaround" or "dismiss-button"
     }
 
     with open(TEMPLATE_PATH) as f:

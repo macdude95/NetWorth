@@ -68,7 +68,14 @@
     .proj-controls button {
       background: #238636; color: #fff; border: none; border-radius: 6px;
       padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
+    .proj-controls button:hover { background: #2ea043; }
+    .tt-dismiss {
+      display: none; float: right; background: #21262d; color: #8b949e;
+      border: 1px solid #30363d; border-radius: 4px; padding: 1px 7px;
+      font-size: 0.72rem; cursor: pointer; line-height: 1.4;
     }
+    .tt-dismiss:hover { background: #30363d; color: #f0f6fc; }
+    .tt-dismiss.visible { display: inline-block; }
     .ach-toggle {
       background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
       padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
@@ -121,13 +128,13 @@
   <div class="stats-row" id="statsRow"></div>
 
   <div class="section">
-    <h2>Net Worth</h2>
+    <h2>Net Worth <button class="tt-dismiss" id="ttDismissNW" onclick="dismissTooltip('nw')">✕</button></h2>
     <div class="timeframe-bar" id="timeframeBarNW"></div>
     <div class="chart-wrapper"><canvas id="chartNetWorth"></canvas></div>
   </div>
 
   <div class="section" id="projectionSection">
-    <h2>Projections (30 years)</h2>
+    <h2>Projections (30 years) <button class="tt-dismiss" id="ttDismissProj" onclick="dismissTooltip('projections')">✕</button></h2>
     <div class="proj-controls" id="projControls">
       <label>Investment growth (%/yr) <input type="number" id="projGrowth" value="7" step="0.5" min="0" max="30"></label>
       <button onclick="recalcProjections()">Update</button>
@@ -139,7 +146,7 @@
   </div>
 
   <div class="section">
-    <h2>Retirement vs Non-Retirement</h2>
+    <h2>Retirement vs Non-Retirement <button class="tt-dismiss" id="ttDismissStacked" onclick="dismissTooltip('stacked')">✕</button></h2>
     <div class="timeframe-bar" id="timeframeBarStacked"></div>
     <div class="chart-wrapper"><canvas id="chartStacked"></canvas></div>
   </div>
@@ -172,7 +179,36 @@ async function checkPassword() {
   }
 }
 
+const MODE = DATA.tooltip_mode || 'dismiss-button';
+const CHART_KEYS = ['chartNetWorth','chartProjections','chartStacked'];
+const CHART_MAP = { chartNetWorth:'nw', chartProjections:'projections', chartStacked:'stacked' };
 const CC = { total: '#1f6feb', exHousing: '#3fb950', retirement: '#d29922', nonRetirement: '#58a6ff' };
+
+function dismissTooltip(key) {
+  var c = charts[key];
+  try { if (c && c.tooltip) c.tooltip.setActiveElements([], {x:0,y:0}); } catch(_) {}
+  updateDismissButtons();
+}
+
+function updateDismissButtons() {
+  if (MODE !== 'dismiss-button') return;
+  var anyActive = false;
+  CHART_KEYS.forEach(function(id) {
+    var c = charts[CHART_MAP[id]];
+    var active = c && c.tooltip && c.tooltip.getActiveElements().length > 0;
+    var btnMap = { chartNetWorth:'ttDismissNW', chartProjections:'ttDismissProj', chartStacked:'ttDismissStacked' };
+    var btn = document.getElementById(btnMap[id]);
+    if (btn) {
+      if (active) { btn.classList.add('visible'); anyActive = true; }
+      else btn.classList.remove('visible');
+    }
+  });
+}
+
+// Periodic check for tooltip visibility (Chart.js doesn't expose show/hide events easily)
+if (MODE === 'dismiss-button') {
+  setInterval(updateDismissButtons, 300);
+}
 
 function fmtShort(n) {
   if (n == null || isNaN(n)) return 'N/A';
@@ -421,38 +457,40 @@ function initDashboard() {
   }
 })();
 
-// --- Tooltip: tap outside any canvas dismisses all tooltips ---
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('canvas')) {
-    Object.values(charts).forEach(c => {
-      try { if (c && c.tooltip) c.tooltip.setActiveElements([], {x:0,y:0}); } catch(_) {}
-    });
-  }
-});
+// --- Tooltip workarounds (only active in 'workaround' mode) ---
+if (MODE === 'workaround') {
+  // tap outside canvas dismisses tooltips
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('canvas')) {
+      Object.values(charts).forEach(c => {
+        try { if (c && c.tooltip) c.tooltip.setActiveElements([], {x:0,y:0}); } catch(_) {}
+      });
+    }
+  });
 
-// --- Tooltip: second tap on same canvas toggles tooltip off (capture phase) ---
-document.addEventListener('click', function(e) {
-  var canvas = e.target.closest('canvas');
-  if (!canvas) return;
-  var chart = charts[canvas.id === 'chartNetWorth' ? 'nw' : canvas.id === 'chartProjections' ? 'projections' : canvas.id === 'chartStacked' ? 'stacked' : null];
-  if (!chart || !chart.tooltip) return;
-  var active = chart.tooltip.getActiveElements();
-  if (active && active.length) {
-    chart.tooltip.setActiveElements([], {x:0,y:0});
-  }
-}, true);
+  // second tap on same canvas toggles tooltip off
+  document.addEventListener('click', function(e) {
+    var canvas = e.target.closest('canvas');
+    if (!canvas) return;
+    var chart = charts[CHART_MAP[canvas.id]];
+    if (!chart || !chart.tooltip) return;
+    var active = chart.tooltip.getActiveElements();
+    if (active && active.length) {
+      chart.tooltip.setActiveElements([], {x:0,y:0});
+    }
+  }, true);
 
-// --- Tooltip: force-hide after touch end (fixes stuck tooltip after drag) ---
-document.addEventListener('touchend', function(e) {
-  var canvas = e.target.closest('canvas');
-  if (!canvas) return;
-  var chart = charts[canvas.id === 'chartNetWorth' ? 'nw' : canvas.id === 'chartProjections' ? 'projections' : canvas.id === 'chartStacked' ? 'stacked' : null];
-  if (!chart) return;
-  // Small delay to let Chart.js finish its internal touch handling
-  setTimeout(function() {
-    try { chart.tooltip.setActiveElements([], {x:0,y:0}); } catch(_) {}
-  }, 50);
-});
+  // force-hide after touch end (fixes stuck tooltip after drag)
+  document.addEventListener('touchend', function(e) {
+    var canvas = e.target.closest('canvas');
+    if (!canvas) return;
+    var chart = charts[CHART_MAP[canvas.id]];
+    if (!chart) return;
+    setTimeout(function() {
+      try { chart.tooltip.setActiveElements([], {x:0,y:0}); } catch(_) {}
+    }, 50);
+  });
+}
 </script>
 </body>
 </html>
