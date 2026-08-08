@@ -171,7 +171,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "28463bbc4bf6585be9d58487919a7775af0b0e0bce7cdd5b3fa18d2ec4aa5814", "salt": "6d77008a9245a74d1c95c8a5ad93a6e1"}, "password_enabled": false};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "2102112ecc0e42dcf5196372970a51c595b8440a1060ebfb295229286f56735f", "salt": "ad51e7ecfc979c80d40018fe0703fb49"}, "password_enabled": false};
 
 // --- Password gate ---
 function sha256(str) {
@@ -236,17 +236,18 @@ function makeTFBar(parentId, key, labels, redraw) {
 function baseOpts() {
   return {
     responsive: true, maintainAspectRatio: true,
-    plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
+    plugins: {
+      legend: { labels: { color: '#8b949e', font: { size: 11 } } },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+      },
+    },
     scales: {
       x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
       y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: CC.grid } }
     },
     interaction: { intersect: false, mode: 'index' },
-    plugins: {
-      tooltip: {
-        events: ['mousemove', 'touchstart', 'touchmove'],
-      },
-    },
   };
 }
 
@@ -532,6 +533,13 @@ function drawStacked() {
     initDashboard();
   }
 })();
+
+// --- Hide tooltips on touch end (prevents persistent tooltips on mobile) ---
+document.addEventListener('touchend', function() {
+  Object.values(charts).forEach(c => {
+    if (c && c.tooltip) c.tooltip.setActiveElements([], { x: 0, y: 0 });
+  });
+});
 </script>
 </body>
 </html>
