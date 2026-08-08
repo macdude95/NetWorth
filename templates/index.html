@@ -258,21 +258,38 @@ function calcProjections(expenses, income, growthPct) {
   const lastIdx = s.dates.length - 1;
   const totalNW = s.net_worth_total[lastIdx];
   const horizonMonths = 30 * 12;
-  const r = growthPct / 100, monthlyGrowth = r / 12;
-  const netSavings = (income - expenses) / 12;
-  const p50 = []; let nw = totalNW;
-  for (let m = 0; m <= horizonMonths; m++) { p50.push(Math.round(nw)); nw = nw * (1 + monthlyGrowth) + Math.max(0, netSavings); }
-  const vol = 0.15 / Math.sqrt(12); const runs = 200; const paths = [];
-  for (let rn = 0; rn < runs; rn++) {
-    const path = []; let val = totalNW;
-    for (let m = 0; m <= horizonMonths; m++) { path.push(Math.round(val)); val = val * Math.exp((monthlyGrowth - 0.5*vol*vol) + randn_bm()*vol) + Math.max(0, netSavings); }
-    paths.push(path);
+  const r = growthPct / 100;
+  const monthlyR = r / 12;
+  const netSavings = Math.max(0, (income - expenses) / 12);
+  const annualVol = 0.15; // 15% annual market volatility
+
+  // Median (deterministic compound growth + savings)
+  const median = [];
+  let nw = totalNW;
+  for (let m = 0; m <= horizonMonths; m++) {
+    median.push(Math.round(nw));
+    nw = nw * (1 + monthlyR) + netSavings;
   }
-  const p10 = [], p90 = [];
-  for (let m = 0; m <= horizonMonths; m++) { const v = paths.map(p => p[m]).sort((a,b)=>a-b); p10.push(v[Math.floor(runs*0.10)]); p90.push(v[Math.floor(runs*0.90)]); }
-  const lastDate = new Date(s.dates[lastIdx]); const projDates = [];
-  for (let m = 0; m <= horizonMonths; m++) { const d = new Date(lastDate); d.setMonth(d.getMonth()+m); projDates.push(d.toISOString().slice(0,10)); }
-  return { projDates, p50, p10, p90 };
+
+  // Analytical band: median ± 1.28σ (80% confidence, using sqrt(t) scaling)
+  // σ(t) = V0 * vol * sqrt(t) for the accumulated random component
+  const upper = [], lower = [];
+  for (let m = 0; m <= horizonMonths; m++) {
+    const t = m / 12; // years
+    const sigma = totalNW * annualVol * Math.sqrt(t);
+    const band = 1.28 * sigma; // 80% confidence (z=1.28)
+    lower.push(Math.round(Math.max(0, median[m] - band)));
+    upper.push(Math.round(median[m] + band));
+  }
+
+  const lastDate = new Date(s.dates[lastIdx]);
+  const projDates = [];
+  for (let m = 0; m <= horizonMonths; m++) {
+    const d = new Date(lastDate); d.setMonth(d.getMonth() + m);
+    projDates.push(d.toISOString().slice(0, 10));
+  }
+
+  return { projDates, median, lower, upper };
 }
 
 function drawProjectionsFn() {
@@ -285,9 +302,9 @@ function drawProjectionsFn() {
     data: {
       labels: p.projDates,
       datasets: [
-        { label: 'Lower range (p10)', data: p.p10, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
-        { label: 'Most likely (median)', data: p.p50, borderColor: CC.projP50, fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-        { label: 'Realistic range (80% of outcomes)', data: p.p90, borderColor: 'transparent', backgroundColor: CC.projBand, fill: '-1', tension: 0.3, pointRadius: 0 },
+        { label: 'Optimistic (p90)', data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+        { label: 'Median forecast', data: p.median, borderColor: CC.projP50, fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+        { label: '80% confidence range', data: p.lower, borderColor: 'transparent', backgroundColor: CC.projBand, fill: '-1', tension: 0.3, pointRadius: 0 },
       ]
     },
     options: {
@@ -304,13 +321,6 @@ function recalcProjections() {
   projCache = calcProjections(expenses, income, growth);
   drawProjectionsFn();
   buildAchievementPanel();
-}
-
-function randn_bm() {
-  let u = 0, v = 0;
-  while (u === 0) u = Math.random();
-  while (v === 0) v = Math.random();
-  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
 }
 
 // --- Milestones ---
