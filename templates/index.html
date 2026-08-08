@@ -241,6 +241,7 @@ function baseOpts() {
       tooltip: {
         mode: 'index',
         intersect: false,
+        events: ['mousemove'],  // desktop only — no touch tooltips (prevents persistent tooltips on mobile)
       },
     },
     scales: {
@@ -250,6 +251,29 @@ function baseOpts() {
     interaction: { intersect: false, mode: 'index' },
   };
 }
+
+// --- Mobile: tap chart to show/hide tooltip at that position ---
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('canvas').forEach(canvas => {
+    canvas.addEventListener('click', function(e) {
+      const chart = Chart.getChart(canvas);
+      if (!chart) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      // If tooltip is already showing, hide it. Otherwise show at tap point.
+      if (chart.tooltip && chart.tooltip.getActiveElements().length > 0) {
+        chart.setActiveElements([]);
+        chart.update('none');
+      } else {
+        const points = chart.getElementsAtEventForMode(e, 'index', { intersect: false }, true);
+        chart.setActiveElements(points);
+        chart.tooltip.setActiveElements(points, { x, y });
+        chart.update();
+      }
+    });
+  });
+});
 
 // --- Projection engine ---
 let projCache = null;
@@ -313,7 +337,7 @@ function drawProjectionsFn() {
         legend: {
           labels: {
             color: '#8b949e', font: { size: 10 },
-            filter: function(item) { return item.text !== ''; },
+            filter: function(item) { return item.text && item.text.length > 0; },
           }
         }
       }
@@ -552,12 +576,6 @@ function drawStacked() {
   }
 })();
 
-// --- Hide tooltips on touch end (prevents persistent tooltips on mobile) ---
-document.addEventListener('touchend', function() {
-  Object.values(charts).forEach(c => {
-    if (c) { c.setActiveElements([]); c.update('none'); }
-  });
-});
 </script>
 </body>
 </html>
