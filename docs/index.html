@@ -164,7 +164,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "31b737c42df4310949dda23a3500f1d29242ad96b80f96acbee3576df5f129a8", "salt": "e75b080916a40078ba0edd40989c7fc4"}, "password_enabled": false, "chart_library": "apexcharts"};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "cdcbb0696a72bee1bc74b1206299d5c82da1dfe3dbe902c542e640742917556e", "salt": "b8ce0f5e67e62a75c5be01a62d17a4b8"}, "password_enabled": false, "chart_library": "chartjs"};
 
 // --- Password gate ---
 function sha256(str) {
@@ -297,29 +297,11 @@ function drawProjections_apex() {
   const opts = apexOpts({
     type: 'line',
     series: [
-      {
-        name: '80% range',
-        data: p.lower.map((v,i) => ({x: p.projDates[i], y: v})),
-        type: 'area',
-        color: '#4dabf7',
-        fill: { type: 'gradient', gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.2, opacityTo: 0.02 } },
-        legend: { show: false },
-      },
-      {
-        name: 'Range top',
-        data: p.upper.map((v,i) => ({x: p.projDates[i], y: v})),
-        color: 'transparent',
-        legend: { show: false },
-      },
-      {
-        name: 'Median',
-        data: p.median.map((v,i) => ({x: p.projDates[i], y: v})),
-        color: '#4dabf7',
-        markers: { size: 0 },
-      },
+      { name: 'Projected', data: p.median.map((v,i) => ({x: p.projDates[i], y: v})), color: '#4dabf7' },
     ],
-    stroke: { width: [0, 0, 3], curve: 'straight' },
-    legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', markers: { width: 20, height: 3, radius: 1 } },
+    stroke: { width: 3, curve: 'straight' },
+    markers: { size: 0 },
+    legend: { show: false },
   });
   const chart = new ApexCharts(document.getElementById('chartProjections'), opts);
   chart.render();
@@ -387,13 +369,8 @@ function drawProjections_chartjs() {
   const canvas = container.querySelector('canvas');
   charts.projections = new Chart(canvas.getContext('2d'), {
     type: 'line', data: { labels: p.projDates, datasets: [
-      { data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
-      { label: 'Median forecast', data: p.median, borderColor: '#a5d6ff', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-      { label: '80% range', data: p.lower, borderColor: 'transparent', backgroundColor: 'rgba(88,166,255,0.25)', fill: '-1', tension: 0.3, pointRadius: 0 },
-    ]}, options: {
-      ...baseOpts(),
-      plugins: { legend: { labels: { color: '#8b949e', font: { size: 10 }, filter: function(item) { return item.text && item.text.length > 0; } } } }
-    },
+      { label: 'Projected', data: p.median, borderColor: '#4dabf7', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+    ]}, options: baseOpts(),
   });
 }
 

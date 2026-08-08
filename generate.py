@@ -133,7 +133,7 @@ def main():
             "salt": stored_salt,
         },
         "password_enabled": False,
-        "chart_library": "apexcharts",  # "chartjs" or "apexcharts"
+        "chart_library": "chartjs",  # "chartjs" or "apexcharts"
     }
 
     with open(TEMPLATE_PATH) as f:

@@ -297,29 +297,11 @@ function drawProjections_apex() {
   const opts = apexOpts({
     type: 'line',
     series: [
-      {
-        name: '80% range',
-        data: p.lower.map((v,i) => ({x: p.projDates[i], y: v})),
-        type: 'area',
-        color: '#4dabf7',
-        fill: { type: 'gradient', gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.2, opacityTo: 0.02 } },
-        legend: { show: false },
-      },
-      {
-        name: 'Range top',
-        data: p.upper.map((v,i) => ({x: p.projDates[i], y: v})),
-        color: 'transparent',
-        legend: { show: false },
-      },
-      {
-        name: 'Median',
-        data: p.median.map((v,i) => ({x: p.projDates[i], y: v})),
-        color: '#4dabf7',
-        markers: { size: 0 },
-      },
+      { name: 'Projected', data: p.median.map((v,i) => ({x: p.projDates[i], y: v})), color: '#4dabf7' },
     ],
-    stroke: { width: [0, 0, 3], curve: 'straight' },
-    legend: { position: 'top', horizontalAlign: 'left', fontSize: '11px', markers: { width: 20, height: 3, radius: 1 } },
+    stroke: { width: 3, curve: 'straight' },
+    markers: { size: 0 },
+    legend: { show: false },
   });
   const chart = new ApexCharts(document.getElementById('chartProjections'), opts);
   chart.render();
@@ -387,13 +369,8 @@ function drawProjections_chartjs() {
   const canvas = container.querySelector('canvas');
   charts.projections = new Chart(canvas.getContext('2d'), {
     type: 'line', data: { labels: p.projDates, datasets: [
-      { data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
-      { label: 'Median forecast', data: p.median, borderColor: '#a5d6ff', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-      { label: '80% range', data: p.lower, borderColor: 'transparent', backgroundColor: 'rgba(88,166,255,0.25)', fill: '-1', tension: 0.3, pointRadius: 0 },
-    ]}, options: {
-      ...baseOpts(),
-      plugins: { legend: { labels: { color: '#8b949e', font: { size: 10 }, filter: function(item) { return item.text && item.text.length > 0; } } } }
-    },
+      { label: 'Projected', data: p.median, borderColor: '#4dabf7', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+    ]}, options: baseOpts(),
   });
 }
 
