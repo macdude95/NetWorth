@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Net Worth Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -16,12 +17,9 @@
     h1 { font-size: 1.4rem; margin-bottom: 4px; color: #f0f6fc; }
     .subtitle { font-size: 0.8rem; color: #8b949e; margin-bottom: 16px; }
     .section { margin-bottom: 28px; }
-    .section h2 { font-size: 1.05rem; color: #f0f6fc; margin-bottom: 10px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }
+    .section h2 { font-size: 1.05rem; color: #f0f6fc; margin-bottom: 10px; border-bottom: 1px solid #21262d; padding-bottom: 4px; display:flex; justify-content:space-between; align-items:center; }
     .chart-wrapper { position: relative; width: 100%; background: #161b22; border-radius: 8px; padding: 12px; }
-    canvas { width: 100% !important; max-height: 350px; }
-    .timeframe-bar {
-      display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;
-    }
+    .timeframe-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
     .timeframe-bar button {
       background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
       padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer;
@@ -29,9 +27,7 @@
     }
     .timeframe-bar button.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
     .timeframe-bar button:hover { background: #30363d; }
-    .stats-row {
-      display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
-    }
+    .stats-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
     .stat-box {
       flex: 1 1 120px; background: #161b22; border-radius: 8px;
       padding: 10px 12px; text-align: center; min-width: 110px;
@@ -73,7 +69,12 @@
       background: #238636; color: #fff; border: none; border-radius: 6px;
       padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
     }
-    /* Achievements panel */
+    .lib-toggle {
+      font-size: 0.65rem; color: #8b949e; cursor: pointer; user-select: none;
+      padding: 2px 8px; border: 1px solid #30363d; border-radius: 4px;
+      background: #21262d;
+    }
+    .lib-toggle:hover { background: #30363d; }
     .ach-toggle {
       background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
       padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
@@ -89,12 +90,8 @@
     .milestone-icon { font-size: 1.1rem; width: 24px; text-align: center; }
     .milestone-name { flex: 1; min-width: 120px; }
     .milestone-progress { flex: 2; }
-    .progress-bar-bg {
-      height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; margin-top: 2px;
-    }
-    .progress-bar-fill {
-      height: 100%; border-radius: 3px; transition: width 0.3s;
-    }
+    .progress-bar-bg { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; margin-top: 2px; }
+    .progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
     .progress-bar-fill.done { background: #3fb950; }
     .progress-bar-fill.close { background: #d29922; }
     .progress-bar-fill.far { background: #30363d; }
@@ -103,10 +100,7 @@
     .milestone-status.done { color: #3fb950; }
     .milestone-status.close { color: #d29922; }
     .milestone-status.far { color: #8b949e; }
-    .ach-group-title {
-      font-size: 0.72rem; color: #8b949e; text-transform: uppercase;
-      padding: 10px 10px 4px; letter-spacing: 0.5px;
-    }
+    .ach-group-title { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; padding: 10px 10px 4px; letter-spacing: 0.5px; }
     @media (max-width: 480px) {
       body { padding: 8px; }
       .stats-row { gap: 6px; }
@@ -130,14 +124,13 @@
 <div id="dashboard" class="container">
   <h1>💰 Net Worth Dashboard</h1>
   <div class="subtitle" id="dateRange"></div>
-
   <div class="stats-row" id="statsRow"></div>
 
   <!-- CHART 1: Net Worth -->
   <div class="section">
-    <h2>Net Worth</h2>
+    <h2>Net Worth <span class="lib-toggle" id="libToggle" onclick="toggleLibrary()" title="Switch chart library"></span></h2>
     <div class="timeframe-bar" id="timeframeBarNW"></div>
-    <div class="chart-wrapper"><canvas id="chartNetWorth"></canvas></div>
+    <div class="chart-wrapper"><div id="chartNetWorth"></div></div>
   </div>
 
   <!-- CHART 2: Projections -->
@@ -151,14 +144,14 @@
       Starting from your current net worth, with income and expenses from your latest snapshot.
       The <b>solid line</b> is the median forecast; the <b>shaded band</b> covers 80% of possible outcomes.
     </div>
-    <div class="chart-wrapper"><canvas id="chartProjections"></canvas></div>
+    <div class="chart-wrapper"><div id="chartProjections"></div></div>
   </div>
 
   <!-- CHART 3: Retirement vs Non-Retirement -->
   <div class="section">
     <h2>Retirement vs Non-Retirement</h2>
     <div class="timeframe-bar" id="timeframeBarStacked"></div>
-    <div class="chart-wrapper"><canvas id="chartStacked"></canvas></div>
+    <div class="chart-wrapper"><div id="chartStacked"></div></div>
   </div>
 
   <!-- ACHIEVEMENTS -->
@@ -171,7 +164,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "70454308bcc38979993c91099daa36666fab69c141ae09fe287ed269c3bea996", "salt": "d8d9bb457762ba3a797ce12027a3eda4"}, "password_enabled": false};
+const DATA = {"series": {"dates": ["2024-01-01", "2024-03-01", "2024-06-01", "2024-09-01", "2025-01-01", "2025-04-01", "2025-07-01", "2025-10-01", "2026-01-01", "2026-04-01", "2026-07-01", "2026-08-01"], "net_worth_total": [606000.0, 660000.0, 693500.0, 734000.0, 788500.0, 820000.0, 885500.0, 922000.0, 985000.0, 1011500.0, 1077000.0, 1069500.0], "net_worth_ex_housing": [526000.0, 572000.0, 595500.0, 625000.0, 660500.0, 678000.0, 726500.0, 752000.0, 801000.0, 816500.0, 868000.0, 855500.0], "retirement": [360000.0, 387000.0, 403000.0, 420000.0, 445000.0, 475000.0, 505000.0, 522000.0, 550000.0, 573000.0, 605000.0, 595000.0], "non_retirement": [546000.0, 570000.0, 584500.0, 605000.0, 630500.0, 628000.0, 659500.0, 675000.0, 706000.0, 705500.0, 735000.0, 735500.0]}, "current": {"mortgage_balance": 261000, "home_equity": 475000, "income": 200000, "expenses": 96000}, "password": {"hash": "cd81de94c87433082f110d565b864c195a442a64213e56557f294f77760007bc", "salt": "4a2439267c956619b286a7bba84f37e9"}, "password_enabled": false, "chart_library": "apexcharts"};
 
 // --- Password gate ---
 function sha256(str) {
@@ -191,12 +184,30 @@ async function checkPassword() {
   }
 }
 
+// --- Library toggle ---
+let currentLib = DATA.chart_library || 'apexcharts';
+document.getElementById('libToggle').textContent = currentLib === 'apexcharts' ? 'Apex' : 'Chart.js';
+
+function toggleLibrary() {
+  currentLib = currentLib === 'apexcharts' ? 'chartjs' : 'apexcharts';
+  document.getElementById('libToggle').textContent = currentLib === 'apexcharts' ? 'Apex' : 'Chart.js';
+  destroyAllCharts();
+  initDashboard();
+}
+
+function destroyAllCharts() {
+  ['nw','projections','stacked'].forEach(k => {
+    try { ApexCharts.exec(k, 'destroy'); } catch(e) {}
+    try { if (charts[k]) { charts[k].destroy(); charts[k] = null; } } catch(e) {}
+  });
+  charts = {};
+}
+
 // --- Colors ---
 const CC = {
   total: '#1f6feb', exHousing: '#3fb950', retirement: '#d29922', nonRetirement: '#58a6ff',
   projP50: '#a5d6ff', projBand: 'rgba(88,166,255,0.25)',
-  grid: 'rgba(201,209,217,0.1)', tick: '#8b949e',
-  milestoneDone: '#3fb950', milestoneClose: '#d29922', milestoneFar: '#8b949e',
+  grid: '#21262d', tick: '#8b949e', bg: '#161b22',
 };
 
 function fmtShort(n) {
@@ -207,8 +218,14 @@ function fmtShort(n) {
   return n.toFixed(0);
 }
 
+function fmtFull(n) {
+  if (n == null || isNaN(n)) return '';
+  return '$' + n.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0});
+}
+
 // --- Timeframes ---
 const TF_MAIN = { 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
+
 function filterDates(dates, seriesArr, tf) {
   if (tf === 'all') return { dates, series: seriesArr };
   const lastDate = new Date(dates[dates.length - 1]);
@@ -221,8 +238,8 @@ function filterDates(dates, seriesArr, tf) {
 }
 
 let charts = {};
-function killChart(k) { if (charts[k]) { charts[k].destroy(); charts[k] = null; } }
 let tf = { nw: 'All', stacked: 'All' };
+
 function makeTFBar(parentId, key, labels, redraw) {
   const bar = document.getElementById(parentId);
   bar.innerHTML = '';
@@ -233,116 +250,203 @@ function makeTFBar(parentId, key, labels, redraw) {
     bar.appendChild(btn);
   });
 }
+
+// --- ApexCharts dark theme defaults ---
+function apexOpts(extra) {
+  return {
+    chart: {
+      type: extra.type || 'line',
+      background: CC.bg,
+      foreColor: CC.tick,
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      animations: { enabled: true, speed: 300 },
+    },
+    stroke: { curve: 'straight', width: extra.strokeWidth || 2 },
+    markers: { size: extra.markers || 2 },
+    grid: { borderColor: CC.grid, strokeDashArray: 2 },
+    xaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' } }, axisBorder: { color: CC.grid }, axisTicks: { color: CC.grid } },
+    yaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' }, formatter: v => fmtShort(v) } },
+    tooltip: { theme: 'dark', x: { format: 'yyyy-MM-dd' } },
+    legend: { labels: { colors: CC.tick }, fontSize: '11px' },
+    ...extra,
+  };
+}
+
+// === APEXCHARTS RENDERERS ===
+
+function drawNW_apex() {
+  const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tf.nw]);
+  const opts = apexOpts({
+    type: 'line',
+    series: [
+      { name: 'Total', data: f.series[0].map((v,i) => ({x: f.dates[i], y: v})), color: CC.total },
+      { name: 'Excl. Home Equity', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: CC.exHousing },
+    ],
+    stroke: { curve: 'straight', width: [2, 2], dashArray: [0, 5] },
+    fill: { type: ['gradient'], gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.3, opacityTo: 0 } },
+  });
+  const chart = new ApexCharts(document.getElementById('chartNetWorth'), opts);
+  chart.render();
+  charts.nw = chart;
+}
+
+function drawProjections_apex() {
+  if (!projCache) recalcProjections();
+  const p = projCache;
+  const opts = apexOpts({
+    type: 'line',
+    series: [
+      {
+        name: '80% range',
+        data: p.lower.map((v,i) => ({x: p.projDates[i], y: v})),
+        color: '#a5d6ff',
+        type: 'area',
+        fill: { type: 'gradient', gradient: { shade: 'dark', type: 'vertical', opacityFrom: 0.25, opacityTo: 0.05 } },
+        stroke: { width: 0 },
+      },
+      {
+        name: 'Optimistic',
+        data: p.upper.map((v,i) => ({x: p.projDates[i], y: v})),
+        color: 'transparent',
+        stroke: { width: 0 },
+        legend: { show: false },
+      },
+      {
+        name: 'Median forecast',
+        data: p.median.map((v,i) => ({x: p.projDates[i], y: v})),
+        color: '#a5d6ff',
+        stroke: { width: 2 },
+      },
+    ],
+  });
+  const chart = new ApexCharts(document.getElementById('chartProjections'), opts);
+  chart.render();
+  charts.projections = chart;
+}
+
+function drawStacked_apex() {
+  const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tf.stacked]);
+  const opts = apexOpts({
+    chart: {
+      type: 'bar',
+      stacked: true,
+      background: CC.bg,
+      foreColor: CC.tick,
+      toolbar: { show: false },
+      zoom: { enabled: false },
+    },
+    series: [
+      { name: 'Non-Retirement', data: f.series[1].map((v,i) => ({x: f.dates[i], y: v})), color: CC.nonRetirement },
+      { name: 'Retirement', data: f.series[0].map((v,i) => ({x: f.dates[i], y: v})), color: CC.retirement },
+    ],
+    plotOptions: { bar: { borderRadius: 2, columnWidth: '70%' } },
+    xaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' } }, axisBorder: { color: CC.grid }, axisTicks: { color: CC.grid } },
+    yaxis: { labels: { style: { colors: CC.tick, fontSize: '10px' }, formatter: v => fmtShort(v) } },
+    grid: { borderColor: CC.grid, strokeDashArray: 2 },
+    tooltip: { theme: 'dark', x: { format: 'yyyy-MM-dd' }, y: { formatter: v => fmtFull(v) } },
+    legend: { labels: { colors: CC.tick }, fontSize: '11px' },
+  });
+  const chart = new ApexCharts(document.getElementById('chartStacked'), opts);
+  chart.render();
+  charts.stacked = chart;
+}
+
+// === CHART.JS RENDERERS ===
+
 function baseOpts() {
   return {
-    responsive: true, maintainAspectRatio: true,
-    plugins: {
-      legend: { labels: { color: '#8b949e', font: { size: 11 } } },
-      tooltip: {
-        mode: 'index',
-        intersect: false,
-        events: ['mousemove'],  // desktop only — no touch tooltips (prevents persistent tooltips on mobile)
-      },
-    },
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
     scales: {
       x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
-      y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: CC.grid } }
+      y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(201,209,217,0.1)' } }
     },
     interaction: { intersect: false, mode: 'index' },
   };
 }
 
-// --- Mobile: tap chart to show/hide tooltip at that position ---
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('canvas').forEach(canvas => {
-    canvas.addEventListener('click', function(e) {
-      const chart = Chart.getChart(canvas);
-      if (!chart) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      // If tooltip is already showing, hide it. Otherwise show at tap point.
-      if (chart.tooltip && chart.tooltip.getActiveElements().length > 0) {
-        chart.setActiveElements([]);
-        chart.update('none');
-      } else {
-        const points = chart.getElementsAtEventForMode(e, 'index', { intersect: false }, true);
-        chart.setActiveElements(points);
-        chart.tooltip.setActiveElements(points, { x, y });
-        chart.update();
-      }
-    });
+function drawNW_chartjs() {
+  const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tf.nw]);
+  const container = document.getElementById('chartNetWorth');
+  container.innerHTML = '<canvas></canvas>';
+  const canvas = container.querySelector('canvas');
+  charts.nw = new Chart(canvas.getContext('2d'), {
+    type: 'line', data: { labels: f.dates, datasets: [
+      { label: 'Total', data: f.series[0], borderColor: CC.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+      { label: 'Excl. Home Equity', data: f.series[1], borderColor: CC.exHousing, borderDash: [5,3], fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+    ]}, options: baseOpts(),
   });
-});
+}
 
-// --- Projection engine ---
+function drawProjections_chartjs() {
+  if (!projCache) recalcProjections();
+  const p = projCache;
+  const container = document.getElementById('chartProjections');
+  container.innerHTML = '<canvas></canvas>';
+  const canvas = container.querySelector('canvas');
+  charts.projections = new Chart(canvas.getContext('2d'), {
+    type: 'line', data: { labels: p.projDates, datasets: [
+      { data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
+      { label: 'Median forecast', data: p.median, borderColor: '#a5d6ff', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
+      { label: '80% range', data: p.lower, borderColor: 'transparent', backgroundColor: 'rgba(88,166,255,0.25)', fill: '-1', tension: 0.3, pointRadius: 0 },
+    ]}, options: {
+      ...baseOpts(),
+      plugins: { legend: { labels: { color: '#8b949e', font: { size: 10 }, filter: function(item) { return item.text && item.text.length > 0; } } } }
+    },
+  });
+}
+
+function drawStacked_chartjs() {
+  const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tf.stacked]);
+  const container = document.getElementById('chartStacked');
+  container.innerHTML = '<canvas></canvas>';
+  const canvas = container.querySelector('canvas');
+  charts.stacked = new Chart(canvas.getContext('2d'), {
+    type: 'bar', data: { labels: f.dates, datasets: [
+      { label: 'Non-Retirement', data: f.series[1], backgroundColor: CC.nonRetirement, borderRadius: 2 },
+      { label: 'Retirement', data: f.series[0], backgroundColor: CC.retirement, borderRadius: 2 },
+    ]}, options: {
+      ...baseOpts(),
+      scales: {
+        x: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+        y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(201,209,217,0.1)' } }
+      }
+    },
+  });
+}
+
+// === DISPATCH ===
+
+function drawNW() { return currentLib === 'apexcharts' ? drawNW_apex() : drawNW_chartjs(); }
+function drawProjectionsFn() { return currentLib === 'apexcharts' ? drawProjections_apex() : drawProjections_chartjs(); }
+function drawStacked() { return currentLib === 'apexcharts' ? drawStacked_apex() : drawStacked_chartjs(); }
+
+// --- Projection engine (shared) ---
 let projCache = null;
 function calcProjections(expenses, income, growthPct) {
   const s = DATA.series;
   const lastIdx = s.dates.length - 1;
   const totalNW = s.net_worth_total[lastIdx];
   const horizonMonths = 30 * 12;
-  const r = growthPct / 100;
-  const monthlyR = r / 12;
+  const r = growthPct / 100, monthlyR = r / 12;
   const netSavings = Math.max(0, (income - expenses) / 12);
-  const annualVol = 0.15; // 15% annual market volatility
-
-  // Median (deterministic compound growth + savings)
+  const annualVol = 0.15;
   const median = [];
   let nw = totalNW;
-  for (let m = 0; m <= horizonMonths; m++) {
-    median.push(Math.round(nw));
-    nw = nw * (1 + monthlyR) + netSavings;
-  }
-
-  // Analytical band: median ± 1.28σ (80% confidence, using sqrt(t) scaling)
-  // σ(t) = V0 * vol * sqrt(t) for the accumulated random component
+  for (let m = 0; m <= horizonMonths; m++) { median.push(Math.round(nw)); nw = nw * (1 + monthlyR) + netSavings; }
   const upper = [], lower = [];
   for (let m = 0; m <= horizonMonths; m++) {
-    const t = m / 12; // years
+    const t = m / 12;
     const sigma = totalNW * annualVol * Math.sqrt(t);
-    const band = 1.28 * sigma; // 80% confidence (z=1.28)
+    const band = 1.28 * sigma;
     lower.push(Math.round(Math.max(0, median[m] - band)));
     upper.push(Math.round(median[m] + band));
   }
-
   const lastDate = new Date(s.dates[lastIdx]);
   const projDates = [];
-  for (let m = 0; m <= horizonMonths; m++) {
-    const d = new Date(lastDate); d.setMonth(d.getMonth() + m);
-    projDates.push(d.toISOString().slice(0, 10));
-  }
-
+  for (let m = 0; m <= horizonMonths; m++) { const d = new Date(lastDate); d.setMonth(d.getMonth()+m); projDates.push(d.toISOString().slice(0,10)); }
   return { projDates, median, lower, upper };
-}
-
-function drawProjectionsFn() {
-  killChart('projections');
-  if (!projCache) recalcProjections();
-  const p = projCache;
-
-  charts.projections = new Chart(document.getElementById('chartProjections').getContext('2d'), {
-    type: 'line',
-    data: {
-      labels: p.projDates,
-      datasets: [
-        { data: p.upper, borderColor: 'transparent', backgroundColor: 'transparent', fill: false, pointRadius: 0 },
-        { label: 'Median forecast', data: p.median, borderColor: '#a5d6ff', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
-        { label: '80% range', data: p.lower, borderColor: 'transparent', backgroundColor: 'rgba(165,214,255,0.15)', fill: '-1', tension: 0.3, pointRadius: 0 },
-      ]
-    },
-    options: {
-      ...baseOpts(),
-      plugins: {
-        legend: {
-          labels: {
-            color: '#8b949e', font: { size: 10 },
-            filter: function(item) { return item.text && item.text.length > 0; },
-          }
-        }
-      }
-    },
-  });
 }
 
 function recalcProjections() {
@@ -359,11 +463,9 @@ function recalcProjections() {
 function getCurrentValues() {
   const s = DATA.series; const li = s.dates.length - 1;
   return {
-    liquidNW: s.net_worth_ex_housing[li],
-    totalNW: s.net_worth_total[li],
-    retirement: s.retirement[li],
-    nonRetirement: s.non_retirement[li],
-    homeEquity: s.net_worth_total[li] - s.net_worth_ex_housing[li], // approximate
+    liquidNW: s.net_worth_ex_housing[li], totalNW: s.net_worth_total[li],
+    retirement: s.retirement[li], nonRetirement: s.non_retirement[li],
+    homeEquity: s.net_worth_total[li] - s.net_worth_ex_housing[li],
   };
 }
 
@@ -371,7 +473,6 @@ function buildMilestones(proj) {
   const cur = getCurrentValues();
   const c = DATA.current || {};
   const expenses = c.expenses || 96000;
-
   function findCrossMonth(target) {
     for (let m = 0; m < proj.median.length; m++) { if (proj.median[m] >= target) return m; }
     return -1;
@@ -381,91 +482,44 @@ function buildMilestones(proj) {
     const d = new Date(proj.projDates[months]);
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
   }
-
   const milestones = [];
-
-  // Liquid NW milestones ($1M-$10M)
   [1e6, 2e6, 3e6, 4e6, 5e6, 7.5e6, 10e6].forEach(v => {
     const pct = cur.liquidNW / v;
     const m = findCrossMonth(v);
-    milestones.push({
-      type: 'liquid', name: '$' + fmtShort(v) + ' liquid', value: v,
-      current: cur.liquidNW, pct, crossMonths: m, crossDate: crossDate(m),
-      status: cur.liquidNW >= v ? 'done' : (pct >= 0.75 ? 'close' : 'far'),
-    });
+    milestones.push({ type: 'liquid', name: '$' + fmtShort(v) + ' liquid', value: v, current: cur.liquidNW, pct, crossMonths: m, crossDate: crossDate(m), status: cur.liquidNW >= v ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
-
-  // Home equity %
-  const homeEq = cur.homeEquity;
-  const mortgageRemaining = homeEq > 0 ? homeEq : (cur.totalNW - cur.liquidNW); // rough
-  // We need real mortgage data — approximate from the difference
-  // For now: home equity % of total home value isn't known without the raw data.
-  // We'll estimate: if liquid NW = total NW - homeEquity, then homeEquity is what we have.
-  // 50%/75%/100% ownership means home equity >= 50% of (home equity + mortgage)
-  // Since we don't have mortgage directly, skip for now — user will add real data later.
-  // Placeholder: show as "need real mortgage data"
   if (DATA.current && DATA.current.mortgage_balance != null) {
-    const totalHome = homeEq + DATA.current.mortgage_balance;
+    const totalHome = cur.homeEquity + DATA.current.mortgage_balance;
     [0.50, 0.75, 1.0].forEach(pct => {
-      const needed = totalHome * pct;
-      const curPct = totalHome > 0 ? homeEq / totalHome : 0;
-      milestones.push({
-        type: 'home', name: (pct*100).toFixed(0) + '% home equity', value: needed,
-        current: homeEq, pct: curPct / pct, crossMonths: -1, crossDate: null,
-        status: curPct >= pct ? 'done' : (curPct >= pct*0.75 ? 'close' : 'far'),
-      });
+      const curPct = totalHome > 0 ? cur.homeEquity / totalHome : 0;
+      milestones.push({ type: 'home', name: (pct*100).toFixed(0) + '% home equity', value: totalHome * pct, current: cur.homeEquity, pct: curPct / pct, crossMonths: -1, crossDate: null, status: curPct >= pct ? 'done' : (curPct >= pct*0.75 ? 'close' : 'far') });
     });
   }
-
-  // FIRE milestones
-  const fireTargets = [
-    { name: 'Coast FIRE', mult: 0, desc: 'investments will grow to cover retirement by 65' },
-    { name: 'Lean FIRE', mult: 25, desc: '25× annual expenses' },
-    { name: 'Full FIRE', mult: 33, desc: '33× expenses (3% SWR)' },
-    { name: 'Fat FIRE', mult: 40, desc: '40× expenses — luxury forever' },
-  ];
-  fireTargets.forEach(ft => {
-    const target = ft.mult > 0 ? expenses * ft.mult : cur.liquidNW; // Coast FIRE: use current as target (always "not yet" unless we calculate properly)
+  [{ name: 'Coast FIRE', mult: 0, desc: 'investments grow to cover retirement by 65' },{ name: 'Lean FIRE', mult: 25, desc: '25× annual expenses' },{ name: 'Full FIRE', mult: 33, desc: '33× expenses (3% SWR)' },{ name: 'Fat FIRE', mult: 40, desc: '40× expenses — luxury forever' }].forEach(ft => {
+    const target = ft.mult > 0 ? expenses * ft.mult : cur.liquidNW;
     const pct = ft.mult > 0 ? cur.liquidNW / target : 0.5;
     const m = ft.mult > 0 ? findCrossMonth(target) : -1;
-    milestones.push({
-      type: 'fire', name: ft.name, value: target, desc: ft.desc,
-      current: ft.mult > 0 ? cur.liquidNW : 0, pct,
-      crossMonths: m, crossDate: crossDate(m),
-      status: ft.mult > 0 && cur.liquidNW >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far'),
-    });
+    milestones.push({ type: 'fire', name: ft.name, value: target, desc: ft.desc, current: ft.mult > 0 ? cur.liquidNW : 0, pct, crossMonths: m, crossDate: crossDate(m), status: ft.mult > 0 && cur.liquidNW >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
-
-  // Bridge fund (non-retirement liquid / expenses)
   [1, 3, 5].forEach(yrs => {
     const target = expenses * yrs;
     const pct = cur.nonRetirement / target;
-    milestones.push({
-      type: 'bridge', name: yrs + '-year bridge', value: target,
-      desc: yrs + ' years of expenses in non-retirement accounts',
-      current: cur.nonRetirement, pct,
-      crossMonths: -1, crossDate: null,
-      status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far'),
-    });
+    milestones.push({ type: 'bridge', name: yrs + '-year bridge', value: target, desc: yrs + ' years of expenses in non-retirement', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
-
   return milestones;
 }
 
-// --- Achievements panel ---
 function buildAchievementPanel() {
   if (!projCache) return;
   const milestones = buildMilestones(projCache);
   const panel = document.getElementById('achPanel');
   if (!panel) return;
-
   const groups = [
-    { key: 'liquid', title: '💰 Liquid Net Worth' },
-    { key: 'fire', title: '🔥 FIRE Milestones' },
-    { key: 'bridge', title: '🌉 Bridge Fund (non-retirement)' },
-    { key: 'home', title: '🏠 Home Equity' },
+    { key: 'liquid', title: '\ud83d\udcb0 Liquid Net Worth' },
+    { key: 'fire', title: '\ud83d\udd25 FIRE Milestones' },
+    { key: 'bridge', title: '\ud83c\udf09 Bridge Fund (non-retirement)' },
+    { key: 'home', title: '\ud83c\udfe0 Home Equity' },
   ];
-
   let html = '';
   groups.forEach(g => {
     const items = milestones.filter(m => m.type === g.key);
@@ -474,7 +528,7 @@ function buildAchievementPanel() {
     items.forEach(m => {
       const pct = Math.min(100, Math.max(0, m.pct * 100));
       const barClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
-      const statusText = m.status === 'done' ? '✅' : (m.status === 'close' ? '🔶' : '⬜');
+      const statusText = m.status === 'done' ? '\u2705' : (m.status === 'close' ? '\ud83d\udd36' : '\u2b1c');
       const dateText = m.crossDate ? 'Est. ' + m.crossDate : (m.status === 'done' ? 'Done' : '');
       html += '<div class="milestone-row">';
       html += '<div class="milestone-icon">' + statusText + '</div>';
@@ -491,14 +545,8 @@ function buildAchievementPanel() {
 function toggleAchievements() {
   const panel = document.getElementById('achPanel');
   const caret = document.getElementById('achCaret');
-  if (panel.style.display === 'none') {
-    panel.style.display = 'block';
-    caret.textContent = '▼';
-    buildAchievementPanel();
-  } else {
-    panel.style.display = 'none';
-    caret.textContent = '▶';
-  }
+  if (panel.style.display === 'none') { panel.style.display = 'block'; caret.textContent = '\u25bc'; buildAchievementPanel(); }
+  else { panel.style.display = 'none'; caret.textContent = '\u25b6'; }
 }
 
 // --- Main ---
@@ -513,13 +561,21 @@ function initDashboard() {
   const nwEx = s.net_worth_ex_housing[lastIdx];
   const ret = s.retirement[lastIdx];
 
-  document.getElementById('dateRange').textContent = `Latest: ${s.dates[lastIdx]} · ${s.dates.length} snapshots · ${s.dates[0]} → ${s.dates[lastIdx]}`;
+  document.getElementById('dateRange').textContent = (currentLib === 'apexcharts' ? '[ApexCharts] \u2022 ' : '[Chart.js] \u2022 ') + 'Latest: ' + s.dates[lastIdx] + ' \u00b7 ' + s.dates.length + ' snapshots \u00b7 ' + s.dates[0] + ' \u2192 ' + s.dates[lastIdx];
   document.getElementById('statsRow').innerHTML = [
     { l: 'Net Worth', v: '$'+fmtShort(nw), d: `${delta>=0?'+':''}$${fmtShort(Math.abs(delta))} (${deltaPct>=0?'+':''}${deltaPct.toFixed(1)}%)`, pos: delta>=0 },
     { l: 'Excl. Home', v: '$'+fmtShort(nwEx), d: '', pos: true },
     { l: 'Retirement', v: '$'+fmtShort(ret), d: '', pos: true },
     { l: 'Snapshots', v: s.dates.length, d: '', pos: true },
-  ].map(st => `<div class="stat-box"><div class="label">${st.l}</div><div class="value">${st.v}</div>${st.d ? `<div class="delta ${st.pos?'pos':'neg'}">${st.d}</div>` : ''}</div>`).join('');
+  ].map(st => '<div class="stat-box"><div class="label">'+st.l+'</div><div class="value">'+st.v+'</div>'+(st.d ? '<div class="delta '+(st.pos?'pos':'neg')+'">'+st.d+'</div>' : '')+'</div>').join('');
+
+  document.getElementById('libToggle').textContent = currentLib === 'apexcharts' ? 'Apex' : 'Chart.js';
+
+  // Clear chart containers (div instead of canvas)
+  ['chartNetWorth','chartProjections','chartStacked'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
 
   makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
   drawNW();
@@ -527,44 +583,6 @@ function initDashboard() {
   recalcProjections();
   makeTFBar('timeframeBarStacked', 'stacked', TF_MAIN, drawStacked);
   drawStacked();
-}
-
-function drawNW() {
-  killChart('nw');
-  const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tf.nw]);
-  charts.nw = new Chart(document.getElementById('chartNetWorth').getContext('2d'), {
-    type: 'line',
-    data: {
-      labels: f.dates,
-      datasets: [
-        { label: 'Total', data: f.series[0], borderColor: CC.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-        { label: 'Excl. Home Equity', data: f.series[1], borderColor: CC.exHousing, borderDash: [5,3], fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-      ]
-    },
-    options: baseOpts(),
-  });
-}
-
-function drawStacked() {
-  killChart('stacked');
-  const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tf.stacked]);
-  charts.stacked = new Chart(document.getElementById('chartStacked').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: f.dates,
-      datasets: [
-        { label: 'Non-Retirement', data: f.series[1], backgroundColor: CC.nonRetirement, borderRadius: 2 },
-        { label: 'Retirement', data: f.series[0], backgroundColor: CC.retirement, borderRadius: 2 },
-      ]
-    },
-    options: {
-      ...baseOpts(),
-      scales: {
-        x: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
-        y: { stacked: true, ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: CC.grid } }
-      }
-    },
-  });
 }
 
 // --- Auto-init when password disabled ---
@@ -575,7 +593,6 @@ function drawStacked() {
     initDashboard();
   }
 })();
-
 </script>
 </body>
 </html>

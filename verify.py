@@ -3,6 +3,7 @@
 Browser verification script for Net Worth Dashboard.
 Uses Playwright to load the page in headless Chromium, check for JS errors,
 capture screenshots, and verify all charts render.
+Supports both Chart.js (canvas) and ApexCharts (div/SVG) backends.
 """
 
 import sys
@@ -26,50 +27,36 @@ def verify():
         page.on("pageerror", lambda err: errors.append(f"PAGE ERROR: {err}"))
         
         page.goto(f"file://{HTML_PATH}")
-        page.wait_for_timeout(2000)  # Wait for Chart.js to load + charts to render
+        page.wait_for_timeout(2500)  # Wait for CDN scripts + chart render
         
-        # Check canvas elements exist
-        canvases = page.locator("canvas")
-        canvas_count = canvases.count()
-        print(f"Canvas elements found: {canvas_count}")
+        # Determine which library is active
+        current_lib = page.evaluate("() => currentLib || 'unknown'")
+        print(f"Chart library: {current_lib}")
         
-        if canvas_count < 3:
-            errors.append(f"Expected 3 canvases, found {canvas_count}")
+        chart_ids = ['chartNetWorth', 'chartProjections', 'chartStacked']
+        chart_names = ['Net Worth', 'Projections', 'Retirement']
+        
+        for cid, cname in zip(chart_ids, chart_names):
+            # Check if the container has rendered content (works for both canvas and SVG/div)
+            has_content = page.evaluate(f"""() => {{
+                const el = document.getElementById('{cid}');
+                if (!el) return false;
+                // Check for canvas children (Chart.js) or SVG children (ApexCharts)
+                const svg = el.querySelector('svg');
+                const canvas = el.querySelector('canvas');
+                if (svg) return svg.getBoundingClientRect().height > 10;
+                if (canvas) return canvas.getBoundingClientRect().height > 10;
+                // Check for ApexCharts instance
+                return el.children.length > 0 && el.getBoundingClientRect().height > 10;
+            }}""")
+            if has_content:
+                print(f"  Chart '{cname}': rendered ✓")
+            else:
+                errors.append(f"Chart '{cname}' not rendered")
+                print(f"  Chart '{cname}': NOT RENDERED ✗")
         
         # Screenshot full page
         page.screenshot(path=os.path.join(OUTPUT_DIR, "full-page.png"), full_page=True)
-        
-        # Check each chart renders (has non-zero dimensions)
-        for i in range(canvas_count):
-            canvas = canvases.nth(i)
-            box = canvas.bounding_box()
-            if box and box['width'] > 0 and box['height'] > 0:
-                print(f"  Canvas {i}: {box['width']:.0f}x{box['height']:.0f} ✓")
-            else:
-                errors.append(f"Canvas {i} has zero dimensions")
-        
-        # Verify DATA object exists (scoped as const, check via eval)
-        try:
-            data = page.evaluate("() => { try { return DATA; } catch(e) { return null; } }")
-            if data:
-                print(f"DATA loaded: {len(data['series']['dates'])} snapshots, password_enabled={data['password_enabled']}")
-            else:
-                print("DATA not on window (const scoped) — charts rendered fine regardless")
-        except Exception as e:
-            print(f"DATA check: {e} (expected — const scoped, not window global)")
-        
-        # Verify Chart instances exist via getChart
-        try:
-            charts = page.evaluate("() => { const ids = ['chartNetWorth', 'chartProjections', 'chartStacked']; return ids.map(id => { try { const c = Chart.getChart(document.getElementById(id)); return c ? c.config.type : null; } catch(e) { return null; } }); }")
-            print(f"Chart instances: {charts}")
-            for i, (id, ctype) in enumerate(zip(['Net Worth', 'Projections', 'Retirement'], charts)):
-                if ctype:
-                    print(f"  Chart '{id}': type={ctype} ✓")
-                else:
-                    errors.append(f"Chart '{id}' not rendered")
-                    print(f"  Chart '{id}': NOT RENDERED ✗")
-        except Exception as e:
-            errors.append(f"Chart verification failed: {e}")
         
         browser.close()
     
@@ -81,7 +68,7 @@ def verify():
             print(f"   - {e}")
         return 1
     else:
-        print(f"✅ All charts verified. Screenshots saved to {OUTPUT_DIR}")
+        print(f"✅ All charts verified ({current_lib}). Screenshots saved to {OUTPUT_DIR}")
         return 0
 
 
