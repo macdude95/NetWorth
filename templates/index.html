@@ -114,9 +114,11 @@
     .milestone-status.far { color: #8b949e; }
     .ach-group-title { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; padding: 10px 10px 4px; letter-spacing: 0.5px; }
     .ach-group-title::before {
-      content: ''; display: inline-block; width: 8px; height: 8px;
-      border-radius: 50%; margin-right: 5px; vertical-align: middle;
+      content: ''; display: inline-block; width: 10px; height: 10px;
+      border-radius: 50%; margin-right: 6px; vertical-align: middle;
       background: var(--ach-color, #8b949e);
+      border: 1.5px solid var(--ach-color, #8b949e);
+      opacity: 0.85;
     }
     @media (max-width: 480px) {
       body { padding: 8px; }
@@ -511,8 +513,8 @@ function buildAchievementPanel() {
   const groups = [
     { key: 'liquid', icon: 'dollar-sign', color: '#3fb950', title: 'Liquid Net Worth' },
     { key: 'fire', icon: 'trending-up', color: '#d29922', title: 'FIRE Milestones' },
-    { key: 'bridge', icon: 'arrow-right-circle', color: '#58a6ff', title: 'Bridge Fund' },
-    { key: 'home', icon: 'home', color: '#8b949e', title: 'Home Equity' },
+    { key: 'bridge', icon: 'arrow-right', color: '#58a6ff', title: 'Bridge Fund' },
+    { key: 'home', icon: 'house', color: '#8b949e', title: 'Home Equity' },
   ];
   let html = '';
   groups.forEach(g => {
@@ -534,6 +536,11 @@ function buildAchievementPanel() {
     });
   });
   panel.innerHTML = html || '<div style="padding:12px;color:#8b949e">Add real data to see achievements.</div>';
+  // Cap progress bars at 100% width
+  panel.querySelectorAll('.progress-bar-fill').forEach(function(bar) {
+    var w = parseFloat(bar.style.width);
+    if (w > 100) bar.style.width = '100%';
+  });
 }
 
 // --- Main ---

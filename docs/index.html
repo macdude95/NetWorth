@@ -114,9 +114,11 @@
     .milestone-status.far { color: #8b949e; }
     .ach-group-title { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; padding: 10px 10px 4px; letter-spacing: 0.5px; }
     .ach-group-title::before {
-      content: ''; display: inline-block; width: 8px; height: 8px;
-      border-radius: 50%; margin-right: 5px; vertical-align: middle;
+      content: ''; display: inline-block; width: 10px; height: 10px;
+      border-radius: 50%; margin-right: 6px; vertical-align: middle;
       background: var(--ach-color, #8b949e);
+      border: 1.5px solid var(--ach-color, #8b949e);
+      opacity: 0.85;
     }
     @media (max-width: 480px) {
       body { padding: 8px; }
@@ -180,7 +182,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12], "non_retirement": [360225.81999999995, 378924.61, 364147.14, 376377.42999999993, 420684.61, 450981.44000000006, 449892.4, 437849.95999999996, 465434.9700000001]}, "current": {"home_equity": 642684.22, "mortgage_balance": 565396.78, "income": 400000, "expenses": 108000}, "password": {"hash": "566f1df7410f9bf4ec1268fdc313cb02c4a18840625b6a2dc2b6756eb83b1dff", "salt": "6bccdfba339ef91f681491564eb2df22"}, "password_enabled": false, "tooltip_mode": "dismiss-button"};
+const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12], "non_retirement": [360225.81999999995, 378924.61, 364147.14, 376377.42999999993, 420684.61, 450981.44000000006, 449892.4, 437849.95999999996, 465434.9700000001]}, "current": {"home_equity": 642684.22, "mortgage_balance": 565396.78, "income": 400000, "expenses": 108000}, "password": {"hash": "930f6270a88e52bb1fbc224cefdcee1bcbb6d144e6eecb0444d4f1e48720aa27", "salt": "4e1463717d9b05b115f69d640907617e"}, "password_enabled": false, "tooltip_mode": "dismiss-button"};
 Chart.register(ChartDataLabels);
 
 function sha256(str) {
@@ -511,8 +513,8 @@ function buildAchievementPanel() {
   const groups = [
     { key: 'liquid', icon: 'dollar-sign', color: '#3fb950', title: 'Liquid Net Worth' },
     { key: 'fire', icon: 'trending-up', color: '#d29922', title: 'FIRE Milestones' },
-    { key: 'bridge', icon: 'arrow-right-circle', color: '#58a6ff', title: 'Bridge Fund' },
-    { key: 'home', icon: 'home', color: '#8b949e', title: 'Home Equity' },
+    { key: 'bridge', icon: 'arrow-right', color: '#58a6ff', title: 'Bridge Fund' },
+    { key: 'home', icon: 'house', color: '#8b949e', title: 'Home Equity' },
   ];
   let html = '';
   groups.forEach(g => {
@@ -534,6 +536,11 @@ function buildAchievementPanel() {
     });
   });
   panel.innerHTML = html || '<div style="padding:12px;color:#8b949e">Add real data to see achievements.</div>';
+  // Cap progress bars at 100% width
+  panel.querySelectorAll('.progress-bar-fill').forEach(function(bar) {
+    var w = parseFloat(bar.style.width);
+    if (w > 100) bar.style.width = '100%';
+  });
 }
 
 // --- Main ---
