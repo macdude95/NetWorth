@@ -338,9 +338,14 @@ function setStackedMode(mode) {
   stackedMode = mode;
   document.getElementById('segBar').className = mode === 'bar' ? 'active' : '';
   document.getElementById('segPie').className = mode === 'pie' ? 'active' : '';
-  document.getElementById('timeframeBarStacked').style.display = mode === 'pie' ? 'none' : '';
-  if (mode === 'bar') drawStacked();
-  else drawPie();
+  document.getElementById('timeframeBarStacked').style.visibility = mode === 'pie' ? 'hidden' : '';
+  if (mode === 'bar') {
+    if (charts.stacked) { charts.stacked.destroy(); charts.stacked = null; }
+    drawStacked();
+  } else {
+    if (charts.stacked) { charts.stacked.destroy(); charts.stacked = null; }
+    drawPie();
+  }
 }
 
 function drawStackedOrPie() {
