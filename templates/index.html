@@ -116,10 +116,12 @@
     .ach-group-title::before {
       content: ''; display: inline-block; width: 10px; height: 10px;
       border-radius: 50%; margin-right: 6px; vertical-align: middle;
-      background: var(--ach-color, #8b949e);
-      border: 1.5px solid var(--ach-color, #8b949e);
       opacity: 0.85;
     }
+    .ach-color-liquid::before { background: #3fb950; border: 1.5px solid #3fb950; }
+    .ach-color-fire::before   { background: #d29922; border: 1.5px solid #d29922; }
+    .ach-color-bridge::before { background: #58a6ff; border: 1.5px solid #58a6ff; }
+    .ach-color-home::before   { background: #8b949e; border: 1.5px solid #8b949e; }
     @media (max-width: 480px) {
       body { padding: 8px; }
       .stats-row { gap: 6px; }
@@ -520,7 +522,7 @@ function buildAchievementPanel() {
   groups.forEach(g => {
     const items = milestones.filter(m => m.type === g.key);
     if (items.length === 0) return;
-    html += '<div class="ach-group-title" style="--ach-color:' + g.color + '">' + g.title + '</div>';
+    html += '<div class="ach-group-title ach-color-' + g.key + '">' + g.title + '</div>';
     items.forEach(m => {
       const pct = Math.min(100, Math.max(0, m.pct * 100));
       const barClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
