@@ -437,15 +437,25 @@ function initDashboard() {
   const li = s.dates.length - 1;
   const pi = Math.max(0, li - 1);
   const nw = s.net_worth_total[li];
-  const delta = nw - s.net_worth_total[pi];
-  const deltaPct = s.net_worth_total[pi] > 0 ? (delta / s.net_worth_total[pi] * 100) : 0;
+  const nwPrev = s.net_worth_total[pi];
+  const deltaNW = nw - nwPrev;
+  const deltaPctNW = nwPrev > 0 ? (deltaNW / nwPrev * 100) : 0;
 
-  document.getElementById('dateRange').textContent = 'Latest: ' + s.dates[li] + ' · ' + s.dates.length + ' snapshots · ' + s.dates[0] + ' → ' + s.dates[li];
+  const liquid = s.net_worth_ex_housing[li];
+  const liquidPrev = s.net_worth_ex_housing[pi];
+  const deltaLiquid = liquid - liquidPrev;
+  const deltaPctLiquid = liquidPrev > 0 ? (deltaLiquid / liquidPrev * 100) : 0;
+
+  const ret = s.retirement[li];
+  const retPrev = s.retirement[pi];
+  const deltaRet = ret - retPrev;
+  const deltaPctRet = retPrev > 0 ? (deltaRet / retPrev * 100) : 0;
+
+  document.getElementById('dateRange').textContent = 'Latest: ' + s.dates[li] + ' · ' + s.dates[0] + ' → ' + s.dates[li];
   document.getElementById('statsRow').innerHTML = [
-    { l: 'Net Worth', v: '$'+fmtShort(nw), d: (delta>=0?'+':'')+'$'+fmtShort(Math.abs(delta))+' ('+(deltaPct>=0?'+':'')+deltaPct.toFixed(1)+'%)', pos: delta>=0 },
-    { l: 'Excl. Home', v: '$'+fmtShort(s.net_worth_ex_housing[li]), d: '', pos: true },
-    { l: 'Retirement', v: '$'+fmtShort(s.retirement[li]), d: '', pos: true },
-    { l: 'Snapshots', v: s.dates.length, d: '', pos: true },
+    { l: 'Net Worth', v: '$'+fmtShort(nw), d: (deltaNW>=0?'+':'')+'$'+fmtShort(Math.abs(deltaNW))+' ('+(deltaPctNW>=0?'+':'')+deltaPctNW.toFixed(1)+'%)', pos: deltaNW>=0 },
+    { l: 'Liquid NW', v: '$'+fmtShort(liquid), d: (deltaLiquid>=0?'+':'')+'$'+fmtShort(Math.abs(deltaLiquid))+' ('+(deltaPctLiquid>=0?'+':'')+deltaPctLiquid.toFixed(1)+'%)', pos: deltaLiquid>=0 },
+    { l: 'Retirement', v: '$'+fmtShort(ret), d: (deltaRet>=0?'+':'')+'$'+fmtShort(Math.abs(deltaRet))+' ('+(deltaPctRet>=0?'+':'')+deltaPctRet.toFixed(1)+'%)', pos: deltaRet>=0 },
   ].map(st => '<div class="stat-box"><div class="label">'+st.l+'</div><div class="value">'+st.v+'</div>'+(st.d?'<div class="delta '+(st.pos?'pos':'neg')+'">'+st.d+'</div>':'')+'</div>').join('');
 
   destroyAllCharts();
