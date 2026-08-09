@@ -283,8 +283,8 @@ function drawNW() {
   const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tfState.nw]);
   charts.nw = new Chart(document.getElementById('chartNetWorth'), {
     type: 'line', data: { labels: f.dates, datasets: [
-      { label: 'Total', data: f.series[0], borderColor: CC.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2 },
-      { label: 'Excl. Home Equity', data: f.series[1], borderColor: CC.exHousing, borderDash: [5,3], fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+      { label: 'Total (incl. home)', data: f.series[0], borderColor: CC.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+      { label: 'Liquid (excl. home)', data: f.series[1], borderColor: CC.exHousing, borderDash: [5,3], fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
     ]}, options: baseOpts(),
   });
 }
