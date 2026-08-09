@@ -94,24 +94,22 @@
       justify-content: space-between; align-items: center;
     }
     .ach-toggle:hover { background: #30363d; }
-    .milestone-row {
-      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
-      border-bottom: 1px solid #21262d; font-size: 0.82rem;
-    }
-    .milestone-row:last-child { border-bottom: none; }
-    .milestone-icon { font-size: 1.1rem; width: 24px; text-align: center; }
-    .milestone-name { flex: 1; min-width: 120px; }
-    .milestone-progress { flex: 2; }
-    .progress-bar-bg { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; margin-top: 2px; }
-    .progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-    .progress-bar-fill.done { background: #3fb950; }
-    .progress-bar-fill.close { background: #d29922; }
-    .progress-bar-fill.far { background: #30363d; }
-    .milestone-date { font-size: 0.72rem; color: #8b949e; min-width: 90px; text-align: right; }
-    .milestone-status { font-size: 0.72rem; min-width: 50px; text-align: right; }
-    .milestone-status.done { color: #3fb950; }
-    .milestone-status.close { color: #d29922; }
-    .milestone-status.far { color: #8b949e; }
+    .ach-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .ach-table td { padding: 7px 10px; border-bottom: 1px solid #21262d; vertical-align: middle; }
+    .ach-table tr:last-child td { border-bottom: none; }
+    .ach-table .ach-icon { font-size: 1rem; width: 28px; text-align: center; }
+    .ach-table .ach-label { }
+    .ach-table .ach-bar { width: 100%; min-width: 80px; }
+    .ach-table .ach-pct { text-align: right; min-width: 42px; font-size: 0.75rem; }
+    .ach-table .ach-date { text-align: right; min-width: 75px; font-size: 0.72rem; color: #8b949e; }
+    .ach-table .ach-done { color: #3fb950; }
+    .ach-table .ach-close { color: #d29922; }
+    .ach-table .ach-far { color: #8b949e; }
+    .ach-bar-bg { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; }
+    .ach-bar-fill { height: 100%; border-radius: 3px; max-width: 100%; }
+    .ach-bar-fill.done { background: #3fb950; }
+    .ach-bar-fill.close { background: #d29922; }
+    .ach-bar-fill.far { background: #30363d; }
     .ach-group-title { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; padding: 10px 10px 4px; letter-spacing: 0.5px; }
     @media (max-width: 480px) {
       body { padding: 8px; }
@@ -505,37 +503,37 @@ function buildAchievementPanel() {
   const milestones = buildMilestones(projCache);
   const panel = document.getElementById('achPanel');
   if (!panel) return;
+
   const groups = [
-    { key: 'liquid', title: '\ud83d\udcb0 Liquid Net Worth' },
-    { key: 'fire', title: '\ud83d\udd25 FIRE Milestones' },
-    { key: 'bridge', title: '\ud83c\udf09 Bridge Fund (non-retirement)' },
-    { key: 'home', title: '\ud83c\udfe0 Home Equity' },
+    { key: 'liquid',  title: 'Liquid Net Worth',     icon: '\u25cf', color: '#3fb950' },
+    { key: 'fire',    title: 'FIRE Milestones',       icon: '\u25b2', color: '#d29922' },
+    { key: 'bridge',  title: 'Bridge Fund',            icon: '\u2192', color: '#58a6ff' },
+    { key: 'home',    title: 'Home Equity',            icon: '\u25a0', color: '#8b949e' },
   ];
+
   let html = '';
   groups.forEach(g => {
     const items = milestones.filter(m => m.type === g.key);
     if (items.length === 0) return;
-    html += '<div class="ach-group-title">' + g.title + '</div>';
+    html += '<div class="ach-group-title"><span style="color:' + g.color + '">' + g.icon + '</span> ' + g.title + '</div>';
+    html += '<table class="ach-table"><tbody>';
     items.forEach(m => {
       const pct = Math.min(100, Math.max(0, m.pct * 100));
-      const barClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
-      const icon = m.status === 'done' ? '\u2705' : (m.status === 'close' ? '\ud83d\udd36' : '\u2b1c');
-      const dateText = m.crossDate ? 'Est. ' + m.crossDate : (m.status === 'done' ? 'Done' : '');
-      html += '<div class="milestone-row">';
-      html += '<div class="milestone-icon">' + icon + '</div>';
-      html += '<div class="milestone-name">' + m.name + (m.desc ? '<div style="font-size:0.68rem;color:#8b949e">' + m.desc + '</div>' : '') + '</div>';
-      html += '<div class="milestone-progress"><div class="progress-bar-bg"><div class="progress-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div></div>';
-      html += '<div class="milestone-date">' + dateText + '</div>';
-      html += '<div class="milestone-status ' + barClass + '">' + pct.toFixed(0) + '%</div>';
-      html += '</div>';
+      const cls = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
+      const icon = m.status === 'done' ? '\u2714' : (m.status === 'close' ? '\u25cf' : '\u25cb');
+      const dateText = m.crossDate ? '~' + m.crossDate : (m.status === 'done' ? 'Done' : '');
+      html += '<tr>';
+      html += '<td class="ach-icon ach-' + cls + '">' + icon + '</td>';
+      html += '<td class="ach-label">' + m.name + '</td>';
+      html += '<td class="ach-bar"><div class="ach-bar-bg"><div class="ach-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div></td>';
+      html += '<td class="ach-pct ach-' + cls + '">' + pct.toFixed(0) + '%</td>';
+      html += '<td class="ach-date">' + dateText + '</td>';
+      html += '</tr>';
     });
+    html += '</tbody></table>';
   });
+
   panel.innerHTML = html || '<div style="padding:12px;color:#8b949e">Add real data to see achievements.</div>';
-  // Cap progress bars at 100% width
-  panel.querySelectorAll('.progress-bar-fill').forEach(function(bar) {
-    var w = parseFloat(bar.style.width);
-    if (w > 100) bar.style.width = '100%';
-  });
 }
 
 function toggleAchievements() {
