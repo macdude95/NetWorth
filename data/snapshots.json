@@ -1,174 +1,123 @@
 {
   "snapshots": [
     {
-      "date": "2024-01-01",
+      "date": "2024-12-01",
       "accounts": {
-        "checking": 11000,
-        "hysa": 35000,
-        "brokerage_taxable": 120000,
-        "brokerage_roth": 160000,
-        "retirement_401k": 200000,
-        "home_equity": 380000
+        "michael_robinhood_retirement": 142860.73,
+        "michael_robinhood_taxable": 360225.82,
+        "michael_fidelity_401k": 230194.96,
+        "chris_robinhood_retirement": 74784.62,
+        "chris_fidelity_401k": 53516.47,
+        "chris_investco_ira": 9006.4
       },
-      "liabilities": {
-        "mortgage_balance": 300000
-      }
-    },
-    {
-      "date": "2024-03-01",
-      "accounts": {
-        "checking": 12000,
-        "hysa": 38000,
-        "brokerage_taxable": 135000,
-        "brokerage_roth": 172000,
-        "retirement_401k": 215000,
-        "home_equity": 385000
-      },
-      "liabilities": {
-        "mortgage_balance": 297000
-      }
-    },
-    {
-      "date": "2024-06-01",
-      "accounts": {
-        "checking": 10500,
-        "hysa": 40000,
-        "brokerage_taxable": 142000,
-        "brokerage_roth": 178000,
-        "retirement_401k": 225000,
-        "home_equity": 392000
-      },
-      "liabilities": {
-        "mortgage_balance": 294000
-      }
-    },
-    {
-      "date": "2024-09-01",
-      "accounts": {
-        "checking": 13000,
-        "hysa": 44000,
-        "brokerage_taxable": 148000,
-        "brokerage_roth": 185000,
-        "retirement_401k": 235000,
-        "home_equity": 400000
-      },
-      "liabilities": {
-        "mortgage_balance": 291000
-      }
+      "home_equity": 608167.92,
+      "mortgage_balance": 575961.82
     },
     {
       "date": "2025-01-01",
       "accounts": {
-        "checking": 12500,
-        "hysa": 48000,
-        "brokerage_taxable": 155000,
-        "brokerage_roth": 195000,
-        "retirement_401k": 250000,
-        "home_equity": 415000
+        "michael_robinhood_retirement": 150276.42,
+        "michael_robinhood_taxable": 378924.61,
+        "michael_fidelity_401k": 242144.04,
+        "chris_robinhood_retirement": 78666.58,
+        "chris_fidelity_401k": 56294.43,
+        "chris_investco_ira": 9473.91
       },
-      "liabilities": {
-        "mortgage_balance": 287000
-      }
+      "home_equity": 612456.29,
+      "mortgage_balance": 574641.19
+    },
+    {
+      "date": "2025-02-01",
+      "accounts": {
+        "michael_robinhood_retirement": 144415.87,
+        "michael_robinhood_taxable": 364147.14,
+        "michael_fidelity_401k": 232700.8,
+        "chris_robinhood_retirement": 75598.71,
+        "chris_fidelity_401k": 54099.04,
+        "chris_investco_ira": 9104.44
+      },
+      "home_equity": 616752.11,
+      "mortgage_balance": 573320.56
+    },
+    {
+      "date": "2025-03-01",
+      "accounts": {
+        "michael_robinhood_retirement": 149266.24,
+        "michael_robinhood_taxable": 376377.43,
+        "michael_fidelity_401k": 240516.32,
+        "chris_robinhood_retirement": 78137.77,
+        "chris_fidelity_401k": 55916.01,
+        "chris_investco_ira": 9410.22
+      },
+      "home_equity": 621055.37,
+      "mortgage_balance": 571999.93
     },
     {
       "date": "2025-04-01",
       "accounts": {
-        "checking": 11000,
-        "hysa": 52000,
-        "brokerage_taxable": 140000,
-        "brokerage_roth": 210000,
-        "retirement_401k": 265000,
-        "home_equity": 425000
+        "michael_robinhood_retirement": 166837.88,
+        "michael_robinhood_taxable": 420684.61,
+        "michael_fidelity_401k": 268829.91,
+        "chris_robinhood_retirement": 87336.16,
+        "chris_fidelity_401k": 62498.45,
+        "chris_investco_ira": 10518.0
       },
-      "liabilities": {
-        "mortgage_balance": 283000
-      }
+      "home_equity": 625366.12,
+      "mortgage_balance": 570679.3
+    },
+    {
+      "date": "2025-05-01",
+      "accounts": {
+        "michael_robinhood_retirement": 178853.2,
+        "michael_robinhood_taxable": 450981.44,
+        "michael_fidelity_401k": 288190.49,
+        "chris_robinhood_retirement": 93625.93,
+        "chris_fidelity_401k": 66999.46,
+        "chris_investco_ira": 11275.48
+      },
+      "home_equity": 629684.36,
+      "mortgage_balance": 569358.67
+    },
+    {
+      "date": "2025-06-01",
+      "accounts": {
+        "michael_robinhood_retirement": 178421.29,
+        "michael_robinhood_taxable": 449892.4,
+        "michael_fidelity_401k": 287494.55,
+        "chris_robinhood_retirement": 93399.84,
+        "chris_fidelity_401k": 66837.67,
+        "chris_investco_ira": 11248.25
+      },
+      "home_equity": 634010.11,
+      "mortgage_balance": 568038.04
     },
     {
       "date": "2025-07-01",
       "accounts": {
-        "checking": 13500,
-        "hysa": 56000,
-        "brokerage_taxable": 152000,
-        "brokerage_roth": 225000,
-        "retirement_401k": 280000,
-        "home_equity": 438000
+        "michael_robinhood_retirement": 173645.42,
+        "michael_robinhood_taxable": 437849.96,
+        "michael_fidelity_401k": 279799.08,
+        "chris_robinhood_retirement": 90899.77,
+        "chris_fidelity_401k": 65048.6,
+        "chris_investco_ira": 10947.17
       },
-      "liabilities": {
-        "mortgage_balance": 279000
-      }
+      "home_equity": 638343.39,
+      "mortgage_balance": 566717.41
     },
     {
-      "date": "2025-10-01",
+      "date": "2025-08-01",
       "accounts": {
-        "checking": 12000,
-        "hysa": 58000,
-        "brokerage_taxable": 160000,
-        "brokerage_roth": 232000,
-        "retirement_401k": 290000,
-        "home_equity": 445000
+        "michael_robinhood_retirement": 184585.27,
+        "michael_robinhood_taxable": 465434.97,
+        "michael_fidelity_401k": 297426.72,
+        "chris_robinhood_retirement": 96626.55,
+        "chris_fidelity_401k": 69146.73,
+        "chris_investco_ira": 11636.85
       },
-      "liabilities": {
-        "mortgage_balance": 275000
-      }
-    },
-    {
-      "date": "2026-01-01",
-      "accounts": {
-        "checking": 14000,
-        "hysa": 62000,
-        "brokerage_taxable": 175000,
-        "brokerage_roth": 245000,
-        "retirement_401k": 305000,
-        "home_equity": 455000
-      },
-      "liabilities": {
-        "mortgage_balance": 271000
-      }
-    },
-    {
-      "date": "2026-04-01",
-      "accounts": {
-        "checking": 11500,
-        "hysa": 64000,
-        "brokerage_taxable": 168000,
-        "brokerage_roth": 255000,
-        "retirement_401k": 318000,
-        "home_equity": 462000
-      },
-      "liabilities": {
-        "mortgage_balance": 267000
-      }
-    },
-    {
-      "date": "2026-07-01",
-      "accounts": {
-        "checking": 13000,
-        "hysa": 68000,
-        "brokerage_taxable": 182000,
-        "brokerage_roth": 270000,
-        "retirement_401k": 335000,
-        "home_equity": 472000
-      },
-      "liabilities": {
-        "mortgage_balance": 263000
-      }
-    },
-    {
-      "date": "2026-08-01",
-      "accounts": {
-        "checking": 12500,
-        "hysa": 70000,
-        "brokerage_taxable": 178000,
-        "brokerage_roth": 265000,
-        "retirement_401k": 330000,
-        "home_equity": 475000
-      },
-      "liabilities": {
-        "mortgage_balance": 261000
-      },
-      "income": 200000,
-      "expenses": 96000
+      "home_equity": 642684.22,
+      "mortgage_balance": 565396.78,
+      "income": 400000,
+      "expenses": 108000
     }
   ]
 }
