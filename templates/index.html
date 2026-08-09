@@ -113,15 +113,6 @@
     .milestone-status.close { color: #d29922; }
     .milestone-status.far { color: #8b949e; }
     .ach-group-title { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; padding: 10px 10px 4px; letter-spacing: 0.5px; }
-    .ach-dot {
-      display: inline-block; width: 10px; height: 10px;
-      border-radius: 50%; margin-right: 6px; vertical-align: middle;
-      opacity: 0.85;
-    }
-    .ach-dot-liquid { background: #3fb950; border: 1.5px solid #3fb950; }
-    .ach-dot-fire   { background: #d29922; border: 1.5px solid #d29922; }
-    .ach-dot-bridge { background: #58a6ff; border: 1.5px solid #58a6ff; }
-    .ach-dot-home   { background: #8b949e; border: 1.5px solid #8b949e; }
     @media (max-width: 480px) {
       body { padding: 8px; }
       .stats-row { gap: 6px; }
@@ -178,8 +169,10 @@
   </div>
 
   <div class="section">
-    <h2>Achievements</h2>
-    <div id="achPanel" style="background:#161b22;border-radius:8px;padding:4px 0;" class="chart-wrapper"></div>
+    <button class="ach-toggle" onclick="toggleAchievements()">
+      🏆 Achievements <span id="achCaret" style="font-size:0.7rem;">▶</span>
+    </button>
+    <div id="achPanel" style="display:none;background:#161b22;border-radius:8px;padding:4px 0;margin-top:-4px;" class="chart-wrapper"></div>
   </div>
 </div>
 
@@ -513,23 +506,23 @@ function buildAchievementPanel() {
   const panel = document.getElementById('achPanel');
   if (!panel) return;
   const groups = [
-    { key: 'liquid', icon: 'dollar-sign', color: '#3fb950', title: 'Liquid Net Worth' },
-    { key: 'fire', icon: 'trending-up', color: '#d29922', title: 'FIRE Milestones' },
-    { key: 'bridge', icon: 'arrow-right', color: '#58a6ff', title: 'Bridge Fund' },
-    { key: 'home', icon: 'house', color: '#8b949e', title: 'Home Equity' },
+    { key: 'liquid', title: '\ud83d\udcb0 Liquid Net Worth' },
+    { key: 'fire', title: '\ud83d\udd25 FIRE Milestones' },
+    { key: 'bridge', title: '\ud83c\udf09 Bridge Fund (non-retirement)' },
+    { key: 'home', title: '\ud83c\udfe0 Home Equity' },
   ];
   let html = '';
   groups.forEach(g => {
     const items = milestones.filter(m => m.type === g.key);
     if (items.length === 0) return;
-    html += '<div class="ach-group-title"><span class="ach-dot ach-dot-' + g.key + '"></span>' + g.title + '</div>';
+    html += '<div class="ach-group-title">' + g.title + '</div>';
     items.forEach(m => {
       const pct = Math.min(100, Math.max(0, m.pct * 100));
       const barClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
-      const dotColor = m.status === 'done' ? '#3fb950' : (m.status === 'close' ? '#d29922' : '#30363d');
+      const icon = m.status === 'done' ? '\u2705' : (m.status === 'close' ? '\ud83d\udd36' : '\u2b1c');
       const dateText = m.crossDate ? 'Est. ' + m.crossDate : (m.status === 'done' ? 'Done' : '');
       html += '<div class="milestone-row">';
-      html += '<div class="milestone-icon"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + dotColor + ';"></span></div>';
+      html += '<div class="milestone-icon">' + icon + '</div>';
       html += '<div class="milestone-name">' + m.name + (m.desc ? '<div style="font-size:0.68rem;color:#8b949e">' + m.desc + '</div>' : '') + '</div>';
       html += '<div class="milestone-progress"><div class="progress-bar-bg"><div class="progress-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div></div>';
       html += '<div class="milestone-date">' + dateText + '</div>';
@@ -543,6 +536,13 @@ function buildAchievementPanel() {
     var w = parseFloat(bar.style.width);
     if (w > 100) bar.style.width = '100%';
   });
+}
+
+function toggleAchievements() {
+  const panel = document.getElementById('achPanel');
+  const caret = document.getElementById('achCaret');
+  if (panel.style.display === 'none') { panel.style.display = 'block'; caret.textContent = '\u25bc'; buildAchievementPanel(); }
+  else { panel.style.display = 'none'; caret.textContent = '\u25b6'; }
 }
 
 // --- Main ---
