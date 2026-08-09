@@ -170,14 +170,15 @@
 
   <div class="section">
     <button class="ach-toggle" onclick="toggleAchievements()">
-      🏆 Achievements <span id="achCaret" style="font-size:0.7rem;">▶</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" style="vertical-align:middle;margin-right:4px;"><circle cx="8" cy="3" r="2" fill="#d29922"/><polygon points="6,14 10,14 9.5,9 6.5,9" fill="#d29922"/></svg>
+      Achievements <span id="achCaret" style="font-size:0.7rem;">▶</span>
     </button>
     <div id="achPanel" style="display:none;background:#161b22;border-radius:8px;padding:4px 0;margin-top:-4px;" class="chart-wrapper"></div>
   </div>
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12], "non_retirement": [360225.81999999995, 378924.61, 364147.14, 376377.42999999993, 420684.61, 450981.44000000006, 449892.4, 437849.95999999996, 465434.9700000001]}, "current": {"home_equity": 642684.22, "mortgage_balance": 565396.78, "income": 400000, "expenses": 108000}, "password": {"hash": "60a277c7a076231ec2b5529ccfb14e8fde1d3b6d1da6d7e787307ddf52860744", "salt": "d90ba302c2951fa83e04148af437f109"}, "password_enabled": false, "tooltip_mode": "dismiss-button"};
+const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12], "non_retirement": [360225.81999999995, 378924.61, 364147.14, 376377.42999999993, 420684.61, 450981.44000000006, 449892.4, 437849.95999999996, 465434.9700000001]}, "current": {"home_equity": 642684.22, "mortgage_balance": 565396.78, "income": 400000, "expenses": 108000}, "password": {"hash": "588bd28da8a5499e618d248143e9356d8b2b9df807fc82231fbd4ab9b84ab8a8", "salt": "5e0c9365c8bc494a94128c52a3826ec6"}, "password_enabled": false, "tooltip_mode": "dismiss-button"};
 Chart.register(ChartDataLabels);
 
 function sha256(str) {
@@ -506,10 +507,10 @@ function buildAchievementPanel() {
   const panel = document.getElementById('achPanel');
   if (!panel) return;
   const groups = [
-    { key: 'liquid', title: '💰 Liquid Net Worth' },
-    { key: 'fire', title: '🔥 FIRE Milestones' },
-    { key: 'bridge', title: '🌉 Bridge Fund (non-retirement)' },
-    { key: 'home', title: '🏠 Home Equity' },
+    { key: 'liquid', title: '<svg width=\"12\" height=\"12\" viewBox=\"0 0 12 12\" style=\"vertical-align:middle;margin-right:2px;\"><circle cx=\"6\" cy=\"6\" r=\"5\" fill=\"none\" stroke=\"#3fb950\" stroke-width=\"1.5\"/><text x=\"6\" y=\"8.5\" text-anchor=\"middle\" font-size=\"6\" fill=\"#3fb950\" font-weight=\"bold\">$</text></svg> Liquid Net Worth' },
+    { key: 'fire', title: '<svg width=\"12\" height=\"12\" viewBox=\"0 0 12 12\" style=\"vertical-align:middle;margin-right:2px;\"><circle cx=\"6\" cy=\"6\" r=\"5\" fill=\"none\" stroke=\"#d29922\" stroke-width=\"1.5\"/><text x=\"6\" y=\"8.5\" text-anchor=\"middle\" font-size=\"6\" fill=\"#d29922\" font-weight=\"bold\">*</text></svg> FIRE Milestones' },
+    { key: 'bridge', title: '<svg width=\"12\" height=\"12\" viewBox=\"0 0 12 12\" style=\"vertical-align:middle;margin-right:2px;\"><circle cx=\"6\" cy=\"6\" r=\"5\" fill=\"none\" stroke=\"#58a6ff\" stroke-width=\"1.5\"/><text x=\"6\" y=\"8.5\" text-anchor=\"middle\" font-size=\"6\" fill=\"#58a6ff\" font-weight=\"bold\">~</text></svg> Bridge Fund' },
+    { key: 'home', title: '<svg width=\"12\" height=\"12\" viewBox=\"0 0 12 12\" style=\"vertical-align:middle;margin-right:2px;\"><circle cx=\"6\" cy=\"6\" r=\"5\" fill=\"none\" stroke=\"#8b949e\" stroke-width=\"1.5\"/><text x=\"6\" y=\"8.5\" text-anchor=\"middle\" font-size=\"6\" fill=\"#8b949e\" font-weight=\"bold\">^</text></svg> Home Equity' },
   ];
   let html = '';
   groups.forEach(g => {
@@ -519,10 +520,10 @@ function buildAchievementPanel() {
     items.forEach(m => {
       const pct = Math.min(100, Math.max(0, m.pct * 100));
       const barClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
-      const icon = m.status === 'done' ? '✅' : (m.status === 'close' ? '🔶' : '⬜');
+      const dotColor = m.status === 'done' ? '#3fb950' : (m.status === 'close' ? '#d29922' : '#30363d');
       const dateText = m.crossDate ? 'Est. ' + m.crossDate : (m.status === 'done' ? 'Done' : '');
       html += '<div class="milestone-row">';
-      html += '<div class="milestone-icon">' + icon + '</div>';
+      html += '<div class="milestone-icon"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + dotColor + ';"></span></div>';
       html += '<div class="milestone-name">' + m.name + (m.desc ? '<div style="font-size:0.68rem;color:#8b949e">' + m.desc + '</div>' : '') + '</div>';
       html += '<div class="milestone-progress"><div class="progress-bar-bg"><div class="progress-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div></div>';
       html += '<div class="milestone-date">' + dateText + '</div>';
