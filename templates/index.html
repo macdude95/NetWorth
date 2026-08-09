@@ -292,6 +292,7 @@ function drawNW() {
 function drawProjectionsFn() {
   if (!projCache) recalcProjections();
   const p = projCache;
+  if (charts.projections) { charts.projections.destroy(); charts.projections = null; }
   charts.projections = new Chart(document.getElementById('chartProjections'), {
     type: 'line', data: { labels: p.projDates, datasets: [
       { label: 'Projected', data: p.median, borderColor: '#4dabf7', fill: false, tension: 0.3, pointRadius: 1, borderWidth: 2 },
