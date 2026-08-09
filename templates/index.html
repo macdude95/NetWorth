@@ -333,7 +333,7 @@ function drawProjectionsFn() {
         x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
         y: { stacked: true, min: 0, ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(201,209,217,0.1)' } }
       },
-      plugins: { annotation: { annotations } },
+      plugins: { ...baseOpts().plugins, annotation: { annotations } },
     },
   });
 }
