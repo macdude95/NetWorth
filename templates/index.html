@@ -150,7 +150,8 @@
       <label>Horizon <span id="projHorizonVal">30</span>yr <input type="range" id="projHorizon" min="5" max="50" step="5" value="30" oninput="document.getElementById('projHorizonVal').textContent=this.value;recalcProjections()"></label>
     </div>
     <div style="font-size:0.72rem;color:#8b949e;margin-bottom:10px;">
-      Starting from your current net worth, with income and expenses from your latest snapshot.
+      Projects liquid net worth (excl. home equity). Assumes ~35% effective tax rate (CA+federal), savings = take-home pay minus expenses.<br>
+      Current: $400K income, $108K expenses, $152K net savings/yr ($12.7K/mo).
     </div>
     <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissProj" onclick="dismissTooltip('projections')" title="Dismiss tooltip">✕</button><canvas id="chartProjections"></canvas></div>
   </div>
@@ -373,13 +374,13 @@ let projCache = null;
 function calcProjections(expenses, income, growthPct, horizonYears) {
   const s = DATA.series;
   const lastIdx = s.dates.length - 1;
-  const totalNW = s.net_worth_total[lastIdx];
+  const liquidNW = s.net_worth_ex_housing[lastIdx];
   const horizonMonths = horizonYears * 12;
   const r = growthPct / 100, monthlyR = r / 12;
-  // Tax-adjusted: assume ~35% effective CA+federal rate
+  // Tax-adjusted: ~35% effective CA+federal, savings = take-home minus expenses
   const netSavings = Math.max(0, (income * 0.65 - expenses) / 12);
   const median = [];
-  let nw = totalNW;
+  let nw = liquidNW;
   for (let m = 0; m <= horizonMonths; m++) { median.push(Math.round(nw)); nw = nw * (1 + monthlyR) + netSavings; }
   const lastDate = new Date(s.dates[lastIdx]);
   const projDates = [];
