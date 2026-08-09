@@ -146,11 +146,26 @@
   <div class="section" id="projectionSection">
     <h2>Projections</h2>
     <div class="proj-controls" id="projControls">
-      <label>Growth (%/yr) <span id="projGrowthVal">7</span>% <input type="range" id="projGrowth" min="1" max="15" step="0.5" value="7" oninput="document.getElementById('projGrowthVal').textContent=this.value;recalcProjections()"></label>
-      <label>Horizon <span id="projHorizonVal">10</span>yr <input type="range" id="projHorizon" min="5" max="30" step="5" value="10" oninput="document.getElementById('projHorizonVal').textContent=this.value;recalcProjections()"></label>
-      <label>Income ($K) <span id="projIncomeVal">400</span> <input type="range" id="projIncome" min="50" max="1000" step="25" value="400" oninput="document.getElementById('projIncomeVal').textContent=this.value;recalcProjections()"></label>
-      <label>Tax rate <span id="projTaxVal">35</span>% <input type="range" id="projTax" min="0" max="50" step="1" value="35" oninput="document.getElementById('projTaxVal').textContent=this.value;recalcProjections()"></label>
-      <label>Expenses ($K) <span id="projExpensesVal">108</span> <input type="range" id="projExpenses" min="20" max="500" step="4" value="108" oninput="document.getElementById('projExpensesVal').textContent=this.value;recalcProjections()"></label>
+      <label>Growth (%/yr) <span id="projGrowthVal">7</span>% 
+        <input type="range" id="projGrowth" min="1" max="15" step="0.5" value="7" oninput="syncProjInput('projGrowth','projGrowthNum')">
+        <input type="number" id="projGrowthNum" min="1" max="15" step="0.5" value="7" onchange="syncProjInput('projGrowthNum','projGrowth')" style="width:60px;margin-top:2px;">
+      </label>
+      <label>Horizon <span id="projHorizonVal">10</span>yr 
+        <input type="range" id="projHorizon" min="5" max="30" step="5" value="10" oninput="syncProjInput('projHorizon','projHorizonNum')">
+        <input type="number" id="projHorizonNum" min="5" max="30" step="5" value="10" onchange="syncProjInput('projHorizonNum','projHorizon')" style="width:60px;margin-top:2px;">
+      </label>
+      <label>Income ($K) <span id="projIncomeVal">400</span> 
+        <input type="range" id="projIncome" min="50" max="1000" step="5" value="400" oninput="syncProjInput('projIncome','projIncomeNum')">
+        <input type="number" id="projIncomeNum" min="50" max="1000" step="5" value="400" onchange="syncProjInput('projIncomeNum','projIncome')" style="width:65px;margin-top:2px;">
+      </label>
+      <label>Tax rate <span id="projTaxVal">35</span>% 
+        <input type="range" id="projTax" min="0" max="50" step="1" value="35" oninput="syncProjInput('projTax','projTaxNum')">
+        <input type="number" id="projTaxNum" min="0" max="50" step="1" value="35" onchange="syncProjInput('projTaxNum','projTax')" style="width:55px;margin-top:2px;">
+      </label>
+      <label>Expenses ($K) <span id="projExpensesVal">108</span> 
+        <input type="range" id="projExpenses" min="20" max="500" step="1" value="108" oninput="syncProjInput('projExpenses','projExpensesNum')">
+        <input type="number" id="projExpensesNum" min="20" max="500" step="1" value="108" onchange="syncProjInput('projExpensesNum','projExpenses')" style="width:65px;margin-top:2px;">
+      </label>
     </div>
     <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissProj" onclick="dismissTooltip('projections')" title="Dismiss tooltip">✕</button><canvas id="chartProjections"></canvas></div>
   </div>
@@ -178,6 +193,28 @@
 <script>
 const DATA = __CHART_DATA_JSON__;
 Chart.register(ChartDataLabels);
+
+// --- Sync slider + number input for projections ---
+const PROJ_PAIRS = [
+  ['projGrowth','projGrowthNum','projGrowthVal'],
+  ['projHorizon','projHorizonNum','projHorizonVal'],
+  ['projIncome','projIncomeNum','projIncomeVal'],
+  ['projTax','projTaxNum','projTaxVal'],
+  ['projExpenses','projExpensesNum','projExpensesVal'],
+];
+function syncProjInput(srcId, dstId) {
+  const src = document.getElementById(srcId);
+  const dst = document.getElementById(dstId);
+  if (!src || !dst) return;
+  dst.value = src.value;
+  // Update the display span
+  for (const [slider, numEl, spanId] of PROJ_PAIRS) {
+    if (srcId === slider || srcId === numEl) {
+      document.getElementById(spanId).textContent = src.value;
+    }
+  }
+  recalcProjections();
+}
 
 function sha256(str) {
   const encoder = new TextEncoder();
