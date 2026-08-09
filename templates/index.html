@@ -297,7 +297,6 @@ function drawProjectionsFn() {
     type: 'line', data: { labels: p.projDates, datasets: [
       { label: 'Current NW', data: p.existing, borderColor: '#4dabf7', backgroundColor: 'rgba(77,171,247,0.4)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
       { label: 'Contributions', data: p.contributions, borderColor: '#69db7c', backgroundColor: 'rgba(105,219,124,0.4)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
-      { label: 'Total', data: p.total, borderColor: '#f0f6fc', borderDash: [4,4], fill: false, tension: 0.3, pointRadius: 0, borderWidth: 1.5 },
     ]}, options: {
       ...baseOpts(),
       scales: {
