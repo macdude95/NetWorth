@@ -6,6 +6,7 @@
   <title>Net Worth Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -293,6 +294,34 @@ function drawProjectionsFn() {
   if (!projCache) recalcProjections();
   const p = projCache;
   if (charts.projections) { charts.projections.destroy(); charts.projections = null; }
+
+  // Build milestone annotations
+  const annotations = {};
+  const milestones = [1e6, 2e6, 3e6, 4e6, 5e6, 7.5e6, 10e6];
+  milestones.forEach((v, i) => {
+    let crossIdx = -1;
+    for (let m = 0; m < p.total.length; m++) {
+      if (p.total[m] >= v) { crossIdx = m; break; }
+    }
+    if (crossIdx < 0) return;
+    annotations['m' + i] = {
+      type: 'line',
+      xMin: crossIdx, xMax: crossIdx,
+      borderColor: i === 0 ? '#3fb950' : '#d29922',
+      borderWidth: 1,
+      borderDash: [4, 3],
+      label: {
+        display: true,
+        content: '$' + fmtShort(v),
+        position: 'start',
+        backgroundColor: 'rgba(22,27,34,0.8)',
+        color: '#8b949e',
+        font: { size: 9 },
+        padding: 2,
+      }
+    };
+  });
+
   charts.projections = new Chart(document.getElementById('chartProjections'), {
     type: 'line', data: { labels: p.projDates, datasets: [
       { label: 'Current NW', data: p.existing, borderColor: '#4dabf7', backgroundColor: 'rgba(77,171,247,0.4)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
@@ -303,6 +332,7 @@ function drawProjectionsFn() {
         x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
         y: { stacked: true, min: 0, ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(201,209,217,0.1)' } }
       },
+      plugins: { annotation: { annotations } },
     },
   });
 }
