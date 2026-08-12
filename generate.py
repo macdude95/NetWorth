@@ -122,7 +122,7 @@ def main():
             "expenses": last.get("expenses"),
         },
         "password": {"hash": stored_hash, "salt": stored_salt},
-        "password_enabled": False,
+        "password_enabled": True,
         "tooltip_mode": "dismiss-button",
     }
 

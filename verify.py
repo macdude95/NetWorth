@@ -15,7 +15,16 @@ def verify():
         page = browser.new_page(viewport={"width": 390, "height": 844})
         page.on("pageerror", lambda err: errors.append(f"PAGE ERROR: {err}"))
         page.goto(f"file://{HTML_PATH}")
-        page.wait_for_timeout(2500)
+        page.wait_for_timeout(1500)
+
+        # Enter password if gate is present
+        try:
+            if page.locator("#pw-input").count() > 0:
+                page.fill("#pw-input", "networth")
+                page.click("#gate button[type='submit']")
+                page.wait_for_timeout(1500)
+        except:
+            pass
 
         ids = ['chartNetWorth', 'chartProjections', 'chartStacked']
         names = ['Net Worth', 'Projections', 'Retirement']
