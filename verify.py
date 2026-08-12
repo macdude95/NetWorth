@@ -20,7 +20,7 @@ def verify():
         # Enter password if gate is present
         try:
             if page.locator("#pw-input").count() > 0:
-                page.fill("#pw-input", "networth")
+                page.fill("#pw-input", "vesper")
                 page.click("#gate button[type='submit']")
                 page.wait_for_timeout(1500)
         except:
