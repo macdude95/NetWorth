@@ -131,6 +131,7 @@ def main():
         "password_enabled": True,
         "tooltip_mode": "dismiss-button",
         "projection_defaults": config.get("projection", {}),
+        "retirement_profile": config.get("retirement_profile", {}),
     }
 
     with open(TEMPLATE_PATH) as f:

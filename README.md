@@ -9,7 +9,7 @@ A personal net worth tracking and projection dashboard. Track liquid net worth, 
 - **Net Worth tracking** — liquid net worth and total (incl. home equity) over time, with month-over-month deltas
 - **Projections** — forward projection split into two stacked components: your current investments compounding vs. future contributions, driven by adjustable growth rate, income, tax rate, expenses, and time horizon
 - **Retirement breakdown** — stacked bar chart over time + doughnut chart for the current retirement vs. non-retirement split (toggle between views)
-- **Achievements** — milestone tracker for liquid net worth ($1M–$10M), FIRE milestones (Coast/Lean/Full/Fat), bridge fund, and home equity, with progress bars and estimated completion dates
+- **Achievements** — milestone tracker for liquid net worth ($1M–$10M), FIRE milestones (Coast FIRE uses the configured retirement age), bridge-fund checkpoints from 1 to 20 years of expenses, and home equity, with compact category cards, progress bars, and estimated completion dates
 - **Mobile responsive** — designed for phone viewing, tap-friendly controls
 
 ## How it works

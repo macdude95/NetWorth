@@ -13,5 +13,11 @@
     "income_thousands": 400,
     "tax_rate": 35,
     "expenses_thousands": 108
+  },
+  "retirement_profile": {
+    "target_age": 42,
+    "birth_year": 1995,
+    "birth_month": 9,
+    "fire_multiple": 25
   }
 }

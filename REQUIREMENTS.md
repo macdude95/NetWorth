@@ -53,6 +53,9 @@ Defines account metadata and projection settings. See file for full schema. Key 
 - `accounts.<key>.bucket`: `"retirement"` or `"non_retirement"`
 - `accounts.<key>.liquid`: `true`/`false` (home equity is illiquid)
 - `projection.*`: editable projection defaults used by the UI
+- `retirement_profile.target_age`: target retirement age used by Coast FIRE
+- `retirement_profile.birth_year` and `birth_month`: used to calculate the target month
+- `retirement_profile.fire_multiple`: retirement target multiple used by Coast FIRE (default 25)
 
 Password credentials are stored in `data/password.json` and injected into the generated page. They provide casual privacy, not security against source inspection or offline brute force.
 
@@ -81,7 +84,7 @@ Four categories with progress bars and projected cross-dates:
 |---|---|
 | 💰 Liquid Net Worth | $1M, $2M, $3M, $4M, $5M, $7.5M, $10M |
 | 🔥 FIRE | Coast FIRE, Lean FIRE (25× expenses), Full FIRE (33×), Fat FIRE (40×) |
-| 🌉 Bridge Fund | 1yr, 3yr, 5yr expenses in non-retirement accounts |
+| 🌉 Bridge Fund | 1yr, 3yr, 5yr, 10yr, 15yr, 20yr expenses in non-retirement accounts |
 | 🏠 Home Equity | 50%, 75%, 100% ownership (mortgage-free) |
 
 - **Horizontal milestone lines** on projection chart for liquid NW + FIRE targets
