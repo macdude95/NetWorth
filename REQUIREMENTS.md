@@ -52,7 +52,7 @@ Checking and savings are not tracked by design. `config.json` is the authoritati
 Defines account metadata and projection settings. See file for full schema. Key fields:
 - `accounts.<key>.bucket`: `"retirement"` or `"non_retirement"`
 - `accounts.<key>.liquid`: `true`/`false` (home equity is illiquid)
-- `projection.*`: editable projection defaults used by the UI
+- `projection.*`: editable projection defaults used by the UI; presets are 4% conservative, 7% expected, and 9% optimistic
 - `retirement_profile.target_age`: target retirement age used by Coast FIRE
 - `retirement_profile.birth_year` and `birth_month`: used to calculate the target month
 - `retirement_profile.fire_multiple`: retirement target multiple used by Coast FIRE (default 25)
@@ -89,7 +89,9 @@ Four categories with progress bars and projected cross-dates:
 
 - **Horizontal milestone lines** on projection chart for liquid NW + FIRE targets
 - **Collapsible achievements panel** (click "🏆 Achievements") with progress bars, estimated cross-dates, and color coding (green = done, amber = close, gray = distant)
-- FIRE and bridge milestones recalculate live when expense input changes
+- **FIRE and bridge milestones** recalculate live when expense input changes
+- **Projection scenarios** provide Conservative, Expected, Optimistic, and Custom modes; detailed inputs are hidden under Advanced settings by default
+- **Achievement cards** include collapsed calculation explanations and distinguish completed, current-focus, and future ladder milestones
 
 ### 5. Password Gate
 - SHA-256 client-side gate

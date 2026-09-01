@@ -66,7 +66,14 @@
       background: #000; border: 1px solid #30363d; border-radius: 6px;
       padding: 6px 8px; color: #f0f6fc; font-size: 0.85rem; width: 100%;
     }
-    .proj-controls input:focus { border-color: #C9A961; outline: none; }
+    .proj-controls input:focus, .proj-controls select:focus { border-color: #C9A961; outline: none; }
+    .proj-scenario { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #8b949e; font-size: 0.76rem; }
+    .proj-scenario label { color: #f0f6fc; font-weight: 650; }
+    .proj-scenario select { background: #000; border: 1px solid #C9A961; border-radius: 6px; padding: 7px 9px; color: #f0f6fc; font-size: 0.82rem; }
+    .advanced-settings { margin-bottom: 12px; border: 1px solid #27231a; border-radius: 8px; background: #0b0b0b; }
+    .advanced-settings summary { cursor: pointer; color: #C9A961; padding: 9px 12px; font-size: 0.76rem; font-weight: 700; list-style-position: inside; }
+    .advanced-settings summary:focus-visible { outline: 2px solid #C9A961; outline-offset: -2px; }
+    .advanced-settings .proj-controls { border: 0; border-top: 1px solid #27231a; border-radius: 0; margin: 0; }
     .proj-controls button {
       background: #C9A961; color: #000; border: none; border-radius: 6px;
       padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
@@ -141,7 +148,11 @@
     .achievement-ladder { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #27231a; }
     .achievement-ladder-item { color: #8b949e; font-size: 0.67rem; background: #151515; border-radius: 999px; padding: 4px 7px; white-space: nowrap; }
     .achievement-ladder-item.done { color: #69db7c; }
-    .achievement-ladder-item.close { color: #d7a84b; }
+    .achievement-ladder-item.current { color: #d7a84b; border: 1px solid rgba(215,168,75,0.65); font-weight: 700; }
+    .achievement-ladder-item.far { color: #8b949e; }
+    .achievement-explainer { margin-top: 9px; color: #8b949e; font-size: 0.68rem; }
+    .achievement-explainer summary { cursor: pointer; color: #C9A961; }
+    .achievement-explainer p { margin: 5px 0 0; line-height: 1.35; }
     @media (max-width: 480px) {
       .achievement-grid { grid-template-columns: 1fr; }
       .ach-header { align-items: start; }
@@ -180,14 +191,18 @@
 
   <div class="section" id="projectionSection">
     <h2>Projections</h2>
-    <div class="proj-controls" id="projControls">
-      <label>Growth <input type="number" id="projGrowth" min="0" max="15" step="0.5" inputmode="decimal" aria-label="Annual investment growth rate" value="7"> %/yr</label>
-      <label>Horizon <input type="number" id="projHorizon" min="1" max="30" step="1" inputmode="numeric" aria-label="Projection horizon in years" value="10"> yr</label>
-      <label>Income <input type="number" id="projIncome" min="0" max="1000" step="5" inputmode="decimal" aria-label="Gross annual income in thousands" value="400"> $K/yr</label>
-      <label>Tax <input type="number" id="projTax" min="0" max="100" step="1" inputmode="decimal" aria-label="Tax rate" value="35"> %</label>
-      <label>Expenses <input type="number" id="projExpenses" min="0" max="500" step="1" inputmode="decimal" aria-label="Annual expenses in thousands" value="108"> $K/yr</label>
-      <button type="button" onclick="resetProjectionDefaults()">Reset</button>
-    </div>
+    <div class="proj-scenario"><label for="projScenario">Scenario</label><select id="projScenario" aria-label="Projection scenario" onchange="applyScenario(this.value)"><option value="conservative">Conservative · 4%</option><option value="expected">Expected · 7%</option><option value="optimistic">Optimistic · 9%</option><option value="custom">Custom</option></select></div>
+    <details class="advanced-settings" id="advancedProjection">
+      <summary>Advanced settings</summary>
+      <div class="proj-controls" id="projControls">
+        <label>Growth <input type="number" id="projGrowth" min="0" max="15" step="0.5" inputmode="decimal" aria-label="Annual investment growth rate" value="7"> %/yr</label>
+        <label>Horizon <input type="number" id="projHorizon" min="1" max="30" step="1" inputmode="numeric" aria-label="Projection horizon in years" value="10"> yr</label>
+        <label>Income <input type="number" id="projIncome" min="0" max="1000" step="5" inputmode="decimal" aria-label="Gross annual income in thousands" value="400"> $K/yr</label>
+        <label>Tax <input type="number" id="projTax" min="0" max="100" step="1" inputmode="decimal" aria-label="Tax rate" value="35"> %</label>
+        <label>Expenses <input type="number" id="projExpenses" min="0" max="500" step="1" inputmode="decimal" aria-label="Annual expenses in thousands" value="108"> $K/yr</label>
+        <button type="button" onclick="resetProjectionDefaults()">Reset</button>
+      </div>
+    </details>
     <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissProj" onclick="dismissTooltip('projections')" aria-label="Dismiss projections tooltip" title="Dismiss tooltip">✕</button><canvas id="chartProjections" role="img" aria-label="Liquid net worth projection chart"></canvas></div>
   </div>
 
@@ -485,13 +500,23 @@ function calcProjections(income, expenses, taxRate, growthPct, horizonYears) {
   return { projDates, existing, contributions, total, annualGrowth: growthPct };
 }
 
-function recalcProjections() {
+const SCENARIOS = { conservative: 4, expected: 7, optimistic: 9 };
+function applyScenario(name) {
+  if (SCENARIOS[name] != null) document.getElementById('projGrowth').value = SCENARIOS[name];
+  recalcProjections(name);
+}
+function markCustomScenario() {
+  document.getElementById('projScenario').value = 'custom';
+  recalcProjections('custom');
+}
+function recalcProjections(scenarioName) {
   const income = Math.max(0, Math.min(1000, parseFloat(document.getElementById('projIncome').value) || 0));
   const taxRate = Math.max(0, Math.min(100, parseFloat(document.getElementById('projTax').value) || 0));
   const expenses = Math.max(0, Math.min(500, parseFloat(document.getElementById('projExpenses').value) || 0));
   const growth = Math.max(0, Math.min(15, parseFloat(document.getElementById('projGrowth').value) || 0));
   const horizon = Math.max(1, Math.min(30, parseInt(document.getElementById('projHorizon').value) || 1));
-  localStorage.setItem('networth-projection-inputs', JSON.stringify({ income, taxRate, expenses, growth, horizon }));
+  const scenario = scenarioName || document.getElementById('projScenario').value || 'custom';
+  localStorage.setItem('networth-projection-inputs', JSON.stringify({ income, taxRate, expenses, growth, horizon, scenario }));
   projCache = calcProjections(income, expenses, taxRate, growth, horizon);
   drawProjectionsFn();
   buildAchievementPanel();
@@ -512,6 +537,8 @@ function applyProjectionDefaults() {
   document.getElementById('projIncome').value = saved.income ?? d.income_thousands ?? 400;
   document.getElementById('projTax').value = saved.taxRate ?? d.tax_rate ?? 35;
   document.getElementById('projExpenses').value = saved.expenses ?? d.expenses_thousands ?? 108;
+  const savedScenario = saved.scenario || Object.keys(SCENARIOS).find(k => SCENARIOS[k] === Number(document.getElementById('projGrowth').value)) || 'custom';
+  document.getElementById('projScenario').value = savedScenario;
 }
 
 // --- Milestones ---
@@ -603,6 +630,12 @@ function buildAchievementPanel() {
     { key: 'home', title: 'Home equity', icon: '⌂' },
   ];
 
+  const explanations = {
+    liquid: 'Liquid net worth excludes home equity and mortgage value.',
+    fire: 'Coast FIRE uses retirement assets only; other FIRE targets use liquid net worth and annual expenses.',
+    bridge: 'A bridge fund is non-retirement money available before retirement accounts can be used.',
+    home: 'Home equity is estimated home value minus the remaining mortgage.'
+  };
   let html = '<div class="achievement-grid">';
   groups.forEach(g => {
     const items = milestones.filter(m => m.type === g.key);
@@ -619,13 +652,15 @@ function buildAchievementPanel() {
     html += '<article class="achievement-card featured ' + cls + '">';
     html += '<div class="achievement-card-head"><div><div class="achievement-card-title">' + g.icon + ' ' + g.title + '</div><div class="achievement-card-category">' + (featured.name === g.title ? '' : featured.name) + '</div></div><div class="achievement-status ' + cls + '">' + status + '</div></div>';
     html += '<div class="achievement-description">' + desc + '</div>';
+    html += '<details class="achievement-explainer"><summary>How is this calculated?</summary><p>' + explanations[g.key] + '</p></details>';
     html += '<div class="achievement-progress" role="progressbar" aria-label="' + featured.name + ' progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct.toFixed(0) + '"><div class="achievement-progress-fill ' + cls + '" style="width:' + pct + '%"></div></div>';
     html += '<div class="achievement-card-foot"><span>' + current + ' of ' + target + '</span><span class="' + (dateText === 'Not projected yet' ? 'no-date' : '') + '">' + dateText + '</span></div>';
     html += '<div class="achievement-ladder" aria-label="' + g.title + ' milestones">';
     items.forEach(m => {
-      const itemClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
-      const mark = m.status === 'done' ? '✓' : '○';
-      html += '<span class="achievement-ladder-item ' + itemClass + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
+      const itemClass = m.status === 'done' ? 'done' : (m === featured ? 'current' : 'far');
+      const state = m.status === 'done' ? 'Completed' : (m === featured ? 'Current focus' : 'Future milestone');
+      const mark = m.status === 'done' ? '✓' : (m === featured ? '◆' : '·');
+      html += '<span class="achievement-ladder-item ' + itemClass + '" aria-label="' + m.name + ': ' + state + '" title="' + state + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
     });
     html += '</div></article>';
   });
@@ -677,9 +712,10 @@ function initDashboard() {
   makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
   drawNW();
   applyProjectionDefaults();
-  ['projGrowth','projHorizon','projIncome','projTax','projExpenses'].forEach(id => {
+  ['projHorizon','projIncome','projTax','projExpenses'].forEach(id => {
     document.getElementById(id).addEventListener('input', recalcProjections);
   });
+  document.getElementById('projGrowth').addEventListener('input', markCustomScenario);
   recalcProjections();
   makeTFBar('timeframeBarStacked', 'stacked', TF_MAIN, drawStackedOrPie);
   drawStackedOrPie();
