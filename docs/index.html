@@ -556,18 +556,18 @@ function buildMilestones(proj) {
   const birthYear = Number(profile.birth_year);
   const birthMonth = Number(profile.birth_month);
   const coastValid = coastAge > 0 && birthYear > 0 && birthMonth >= 1 && birthMonth <= 12;
-  const coastDate = coastValid ? new Date(birthYear + coastAge, birthMonth - 1, 1) : null;
-  const snapshotDate = new Date(DATA.series.dates[DATA.series.dates.length - 1]);
+  const coastDate = coastValid ? new Date(Date.UTC(birthYear + coastAge, birthMonth - 1, 1)) : null;
+  const snapshotDate = new Date(DATA.series.dates[DATA.series.dates.length - 1] + 'T00:00:00Z');
   const coastMonths = coastValid ? Math.max(0, (coastDate.getFullYear() - snapshotDate.getFullYear()) * 12 + coastDate.getMonth() - snapshotDate.getMonth()) : 0;
-  const coastYears = coastMonths / 12;
   const annualGrowth = Number(proj.annualGrowth || 0) / 100;
-  const coastFactor = Math.pow(1 + annualGrowth, coastYears);
+  const monthlyGrowth = annualGrowth / 12;
+  const coastFactor = Math.pow(1 + monthlyGrowth, coastMonths);
   const coastTarget = expenses * fireMultiple;
   const coastRequiredToday = coastFactor > 0 ? coastTarget / coastFactor : coastTarget;
   const coastLabel = coastValid ? 'Coast FIRE · age ' + coastAge : 'Coast FIRE';
   const coastDesc = coastValid ? 'Retirement assets needed today to reach ' + fireMultiple + 'x expenses by age ' + coastAge : 'Retirement assets grow toward financial independence';
   const coastPct = coastRequiredToday > 0 ? cur.retirement / coastRequiredToday : 0;
-  milestones.push({ type: 'fire', name: coastLabel, value: coastRequiredToday, desc: coastDesc, current: cur.retirement, pct: coastPct, crossMonths: coastPct >= 1 ? 0 : -1, crossDate: coastPct >= 1 && coastDate ? coastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : null, status: coastPct >= 1 ? 'done' : (coastPct >= 0.75 ? 'close' : 'far') });
+  milestones.push({ type: 'fire', isCoast: true, name: coastLabel, value: coastRequiredToday, desc: coastDesc, current: cur.retirement, pct: coastPct, crossMonths: coastPct >= 1 ? 0 : -1, crossDate: coastPct >= 1 && coastDate ? coastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : null, status: coastPct >= 1 ? 'done' : (coastPct >= 0.75 ? 'close' : 'far') });
   [{ name: 'Lean FIRE', mult: 25, desc: '25x annual expenses' },{ name: 'Full FIRE', mult: 33, desc: '33x expenses (3% SWR)' },{ name: 'Fat FIRE', mult: 40, desc: '40x expenses - luxury forever' }].forEach(ft => {
     const target = expenses * ft.mult;
     const pct = cur.liquidNW / target;
@@ -607,8 +607,8 @@ function buildAchievementPanel() {
   groups.forEach(g => {
     const items = milestones.filter(m => m.type === g.key);
     if (!items.length) return;
-    const candidateItems = g.key === 'fire' ? items.filter(m => m.name !== 'Coast FIRE') : items;
-    const featured = candidateItems.filter(m => m.status !== 'done').sort((a, b) => b.pct - a.pct)[0] || items[0];
+    const candidateItems = items;
+    const featured = candidateItems.filter(m => m.status !== 'done').sort((a, b) => (a.isCoast ? -1 : b.isCoast ? 1 : b.pct - a.pct))[0] || items[0];
     const pct = Math.min(100, Math.max(0, featured.pct * 100));
     const cls = featured.status === 'done' ? 'done' : (featured.status === 'close' ? 'close' : 'far');
     const status = featured.status === 'done' ? 'Complete' : (featured.status === 'close' ? 'Next up' : 'In progress');
