@@ -116,8 +116,11 @@ def verify():
         )
 
         page.locator(".ach-toggle").click()
-        check(page.locator(".achievement-card").count() >= 10, "achievement cards render")
+        check(page.locator(".achievement-card").count() == 4, "achievement category cards render")
         check("complete" in page.locator("#achSummary").inner_text(), "achievement summary renders")
+        check(page.locator(".achievement-ladder").count() == 4, "achievement milestone ladders render")
+        check(page.locator(".achievement-card").first.locator(".achievement-ladder-item").count() >= 2, "liquid milestones are compacted into a ladder")
+        check(page.locator("text=Not projected yet").count() >= 1, "unprojected milestones are clearly labeled")
         check(page.locator(".ach-table").count() == 0, "legacy achievement table is removed")
         check(page.locator(".stat-box").count() == 4, "stats row includes snapshot count")
         check(

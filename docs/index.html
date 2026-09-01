@@ -138,6 +138,10 @@
     .achievement-card-foot { display: flex; justify-content: space-between; gap: 8px; color: #b8b8b8; font-size: 0.7rem; margin-top: 7px; }
     .achievement-card-foot span:last-child { color: #a9a9a9; text-align: right; }
     .achievement-card-foot .no-date { color: #c9c9c9; }
+    .achievement-ladder { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #27231a; }
+    .achievement-ladder-item { color: #8b949e; font-size: 0.67rem; background: #151515; border-radius: 999px; padding: 4px 7px; white-space: nowrap; }
+    .achievement-ladder-item.done { color: #69db7c; }
+    .achievement-ladder-item.close { color: #d7a84b; }
     @media (max-width: 480px) {
       .achievement-grid { grid-template-columns: 1fr; }
       .ach-header { align-items: start; }
@@ -583,21 +587,29 @@ function buildAchievementPanel() {
 
   let html = '<div class="achievement-grid">';
   groups.forEach(g => {
-    milestones.filter(m => m.type === g.key).forEach(m => {
-      const pct = Math.min(100, Math.max(0, m.pct * 100));
-      const cls = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
-      const status = m.status === 'done' ? 'Complete' : (m.status === 'close' ? 'Next up' : 'In progress');
-      const desc = m.desc || ('Target: $' + fmtShort(m.value));
-      const target = '$' + fmtShort(m.value);
-      const current = '$' + fmtShort(m.current);
-      const dateText = m.crossDate ? 'Est. ' + m.crossDate : (m.status === 'done' ? 'Completed' : 'No date yet');
-      html += '<article class="achievement-card ' + cls + '">';
-      html += '<div class="achievement-card-head"><div><div class="achievement-card-title">' + g.icon + ' ' + m.name + '</div><div class="achievement-card-category">' + g.title + '</div></div><div class="achievement-status ' + cls + '">' + status + '</div></div>';
-      html += '<div class="achievement-description">' + desc + '</div>';
-      html += '<div class="achievement-progress" role="progressbar" aria-label="' + m.name + ' progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct.toFixed(0) + '"><div class="achievement-progress-fill ' + cls + '" style="width:' + pct + '%"></div></div>';
-      html += '<div class="achievement-card-foot"><span>' + current + ' of ' + target + '</span><span class="' + (dateText === 'No date yet' ? 'no-date' : '') + '">' + dateText + '</span></div>';
-      html += '</article>';
+    const items = milestones.filter(m => m.type === g.key);
+    if (!items.length) return;
+    const candidateItems = g.key === 'fire' ? items.filter(m => m.name !== 'Coast FIRE') : items;
+    const featured = candidateItems.filter(m => m.status !== 'done').sort((a, b) => b.pct - a.pct)[0] || items[0];
+    const pct = Math.min(100, Math.max(0, featured.pct * 100));
+    const cls = featured.status === 'done' ? 'done' : (featured.status === 'close' ? 'close' : 'far');
+    const status = featured.status === 'done' ? 'Complete' : (featured.status === 'close' ? 'Next up' : 'In progress');
+    const desc = featured.desc || ('Target: $' + fmtShort(featured.value));
+    const target = '$' + fmtShort(featured.value);
+    const current = '$' + fmtShort(featured.current);
+    const dateText = featured.crossDate ? 'Est. ' + featured.crossDate : (featured.status === 'done' ? 'Completed' : 'Not projected yet');
+    html += '<article class="achievement-card featured ' + cls + '">';
+    html += '<div class="achievement-card-head"><div><div class="achievement-card-title">' + g.icon + ' ' + g.title + '</div><div class="achievement-card-category">' + (featured.name === g.title ? '' : featured.name) + '</div></div><div class="achievement-status ' + cls + '">' + status + '</div></div>';
+    html += '<div class="achievement-description">' + desc + '</div>';
+    html += '<div class="achievement-progress" role="progressbar" aria-label="' + featured.name + ' progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct.toFixed(0) + '"><div class="achievement-progress-fill ' + cls + '" style="width:' + pct + '%"></div></div>';
+    html += '<div class="achievement-card-foot"><span>' + current + ' of ' + target + '</span><span class="' + (dateText === 'Not projected yet' ? 'no-date' : '') + '">' + dateText + '</span></div>';
+    html += '<div class="achievement-ladder" aria-label="' + g.title + ' milestones">';
+    items.forEach(m => {
+      const itemClass = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
+      const mark = m.status === 'done' ? '✓' : '○';
+      html += '<span class="achievement-ladder-item ' + itemClass + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
     });
+    html += '</div></article>';
   });
   html += '</div>';
   panel.innerHTML = html;
