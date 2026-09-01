@@ -70,15 +70,18 @@
     .proj-controls button {
       background: #C9A961; color: #000; border: none; border-radius: 6px;
       padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
+    }
     .proj-controls button:hover { background: #2ea043; }
     .tt-dismiss {
-      display: none; position: absolute; top: 6px; right: 6px; z-index: 10;
-      background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
-      border-radius: 6px; padding: 3px 8px; font-size: 0.78rem; cursor: pointer;
-      line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+      position: absolute; top: 10px; right: 10px; z-index: 10;
+      width: 44px; height: 44px; background: rgba(0,0,0,0.82); color: #C9A961;
+      border: 1px solid #C9A961; border-radius: 50%; padding: 0;
+      font-size: 1.15rem; font-weight: 500; cursor: pointer; line-height: 1;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35); transition: transform 0.15s, background 0.15s;
     }
-    .tt-dismiss:hover { background: #30363d; color: #fff; }
-    .tt-dismiss.visible { display: inline-block; }
+    .tt-dismiss:hover, .tt-dismiss:focus-visible { background: #C9A961; color: #000; transform: scale(1.06); outline: none; }
+    .tt-dismiss.visible { display: inline-flex; }
     .seg-control { display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; flex-shrink: 0; }
     .seg-control button {
       background: transparent; color: #8b949e; border: none;
@@ -111,6 +114,35 @@
     .ach-bar-fill.close { background: #d29922; }
     .ach-bar-fill.far { background: #30363d; }
     .ach-group-title { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; padding: 10px 10px 4px; letter-spacing: 0.5px; }
+    .ach-header { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .ach-header h2 { margin-bottom: 4px; }
+    .ach-summary { color: #C9A961; font-size: 0.8rem; }
+    .ach-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; width: auto; margin-bottom: 0; background: #C9A961; color: #000; border: 0; border-radius: 999px; padding: 8px 13px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+    .ach-toggle:hover, .ach-toggle:focus-visible { background: #ead18d; outline: 2px solid #C9A961; outline-offset: 2px; }
+    .achievement-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .achievement-card { background: #0b0b0b; border: 1px solid #27231a; border-radius: 10px; padding: 13px; min-width: 0; }
+    .achievement-card.done { border-color: rgba(105,219,124,0.55); }
+    .achievement-card.close { border-color: rgba(215,168,75,0.65); }
+    .achievement-card-head { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+    .achievement-card-title { color: #f0f6fc; font-size: 0.88rem; font-weight: 650; }
+    .achievement-card-category { color: #8b949e; font-size: 0.68rem; margin-top: 2px; }
+    .achievement-status { font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+    .achievement-status.done { color: #69db7c; }
+    .achievement-status.close { color: #d7a84b; }
+    .achievement-status.far { color: #8b949e; }
+    .achievement-description { color: #8b949e; font-size: 0.72rem; line-height: 1.35; margin: 10px 0 9px; min-height: 1.9em; }
+    .achievement-progress { height: 8px; background: #21262d; border-radius: 5px; overflow: hidden; }
+    .achievement-progress-fill { height: 100%; border-radius: 5px; background: #8b949e; }
+    .achievement-progress-fill.done { background: #69db7c; }
+    .achievement-progress-fill.close { background: #d7a84b; }
+    .achievement-card-foot { display: flex; justify-content: space-between; gap: 8px; color: #b8b8b8; font-size: 0.7rem; margin-top: 7px; }
+    .achievement-card-foot span:last-child { color: #a9a9a9; text-align: right; }
+    .achievement-card-foot .no-date { color: #c9c9c9; }
+    @media (max-width: 480px) {
+      .achievement-grid { grid-template-columns: 1fr; }
+      .ach-header { align-items: start; }
+      .ach-toggle { padding: 8px 11px; }
+    }
     @media (max-width: 480px) {
       body { padding: 8px; }
       .stats-row { gap: 6px; }
@@ -167,11 +199,17 @@
     <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissStacked" onclick="dismissTooltip('stacked')" aria-label="Dismiss retirement tooltip" title="Dismiss tooltip">✕</button><canvas id="chartStacked" role="img" aria-label="Retirement and non-retirement history chart"></canvas></div>
   </div>
 
-  <div class="section">
-    <button class="ach-toggle" aria-expanded="false" aria-controls="achPanel" onclick="toggleAchievements()">
-      🏆 Achievements <span id="achCaret" style="font-size:0.7rem;">▶</span>
-    </button>
-    <div id="achPanel" style="display:none;background:#161b22;border-radius:8px;padding:4px 0;margin-top:-4px;" class="chart-wrapper"></div>
+  <div class="section achievements-section">
+    <div class="ach-header">
+      <div>
+        <h2>Achievements</h2>
+        <div id="achSummary" class="ach-summary">Tracking your next financial milestones</div>
+      </div>
+      <button class="ach-toggle" aria-expanded="false" aria-controls="achPanel" onclick="toggleAchievements()">
+        <span id="achToggleLabel">View details</span><span id="achCaret" aria-hidden="true">↓</span>
+      </button>
+    </div>
+    <div id="achPanel" style="display:none;" aria-live="polite"></div>
   </div>
 </div>
 
@@ -528,36 +566,41 @@ function buildAchievementPanel() {
   const panel = document.getElementById('achPanel');
   if (!panel) return;
 
+  const completed = milestones.filter(m => m.status === 'done').length;
+  const pending = milestones.filter(m => m.status !== 'done').sort((a, b) => b.pct - a.pct);
+  const summary = document.getElementById('achSummary');
+  if (summary) {
+    const next = pending[0];
+    summary.textContent = completed + ' of ' + milestones.length + ' complete' + (next ? ' · Next: ' + next.name : ' · All milestones reached');
+  }
+
   const groups = [
-    { key: 'liquid',  title: 'Liquid Net Worth',     icon: '\u25cf', color: '#3fb950' },
-    { key: 'fire',    title: 'FIRE Milestones',       icon: '\u25b2', color: '#d29922' },
-    { key: 'bridge',  title: 'Bridge Fund',            icon: '\u2192', color: '#58a6ff' },
-    { key: 'home',    title: 'Home Equity',            icon: '\u25a0', color: '#8b949e' },
+    { key: 'liquid', title: 'Liquid net worth', icon: '◆' },
+    { key: 'fire', title: 'FIRE milestones', icon: '✦' },
+    { key: 'bridge', title: 'Bridge fund', icon: '→' },
+    { key: 'home', title: 'Home equity', icon: '⌂' },
   ];
 
-  let html = '';
+  let html = '<div class="achievement-grid">';
   groups.forEach(g => {
-    const items = milestones.filter(m => m.type === g.key);
-    if (items.length === 0) return;
-    html += '<div class="ach-group-title"><span style="color:' + g.color + '">' + g.icon + '</span> ' + g.title + '</div>';
-    html += '<table class="ach-table"><tbody>';
-    items.forEach(m => {
+    milestones.filter(m => m.type === g.key).forEach(m => {
       const pct = Math.min(100, Math.max(0, m.pct * 100));
       const cls = m.status === 'done' ? 'done' : (m.status === 'close' ? 'close' : 'far');
-      const icon = m.status === 'done' ? '\u2714' : (m.status === 'close' ? '\u25cf' : '\u25cb');
-      const dateText = m.crossDate ? '~' + m.crossDate : (m.status === 'done' ? 'Done' : '');
-      html += '<tr>';
-      html += '<td class="ach-icon ach-' + cls + '">' + icon + '</td>';
-      html += '<td class="ach-label">' + m.name + '</td>';
-      html += '<td class="ach-bar"><div class="ach-bar-bg"><div class="ach-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div></td>';
-      html += '<td class="ach-pct ach-' + cls + '">' + pct.toFixed(0) + '%</td>';
-      html += '<td class="ach-date">' + dateText + '</td>';
-      html += '</tr>';
+      const status = m.status === 'done' ? 'Complete' : (m.status === 'close' ? 'Next up' : 'In progress');
+      const desc = m.desc || ('Target: $' + fmtShort(m.value));
+      const target = '$' + fmtShort(m.value);
+      const current = '$' + fmtShort(m.current);
+      const dateText = m.crossDate ? 'Est. ' + m.crossDate : (m.status === 'done' ? 'Completed' : 'No date yet');
+      html += '<article class="achievement-card ' + cls + '">';
+      html += '<div class="achievement-card-head"><div><div class="achievement-card-title">' + g.icon + ' ' + m.name + '</div><div class="achievement-card-category">' + g.title + '</div></div><div class="achievement-status ' + cls + '">' + status + '</div></div>';
+      html += '<div class="achievement-description">' + desc + '</div>';
+      html += '<div class="achievement-progress" role="progressbar" aria-label="' + m.name + ' progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct.toFixed(0) + '"><div class="achievement-progress-fill ' + cls + '" style="width:' + pct + '%"></div></div>';
+      html += '<div class="achievement-card-foot"><span>' + current + ' of ' + target + '</span><span class="' + (dateText === 'No date yet' ? 'no-date' : '') + '">' + dateText + '</span></div>';
+      html += '</article>';
     });
-    html += '</tbody></table>';
   });
-
-  panel.innerHTML = html || '<div style="padding:12px;color:#8b949e">Add real data to see achievements.</div>';
+  html += '</div>';
+  panel.innerHTML = html;
 }
 
 function toggleAchievements() {
@@ -565,7 +608,8 @@ function toggleAchievements() {
   const caret = document.getElementById('achCaret');
   const open = panel.style.display === 'none';
   panel.style.display = open ? 'block' : 'none';
-  caret.textContent = open ? '▼' : '▶';
+  caret.textContent = open ? '↑' : '↓';
+  document.getElementById('achToggleLabel').textContent = open ? 'Hide details' : 'View details';
   document.querySelector('.ach-toggle').setAttribute('aria-expanded', open);
   localStorage.setItem('networth-achievements-open', String(open));
   if (open) buildAchievementPanel();

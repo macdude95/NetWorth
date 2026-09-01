@@ -68,6 +68,10 @@ def verify():
             page.locator("#ttDismissNW").get_attribute("aria-label"),
             "tooltip dismiss button is accessible",
         )
+        check(
+            page.locator("#ttDismissNW").evaluate("el => el.getBoundingClientRect().width >= 44 && el.getBoundingClientRect().height >= 44"),
+            "tooltip dismiss button meets touch target size",
+        )
 
         page.locator("#timeframeBarNW button", has_text="1Y").click()
         page.wait_for_timeout(200)
@@ -112,7 +116,9 @@ def verify():
         )
 
         page.locator(".ach-toggle").click()
-        check(page.locator(".ach-table tr").count() >= 17, "achievement rows render")
+        check(page.locator(".achievement-card").count() >= 10, "achievement cards render")
+        check("complete" in page.locator("#achSummary").inner_text(), "achievement summary renders")
+        check(page.locator(".ach-table").count() == 0, "legacy achievement table is removed")
         check(page.locator(".stat-box").count() == 4, "stats row includes snapshot count")
         check(
             page.locator(".ach-toggle").get_attribute("aria-expanded") == "true",
