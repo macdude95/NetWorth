@@ -118,6 +118,21 @@
       "mortgage_balance": 565396.78,
       "income": 400000,
       "expenses": 108000
+    },
+    {
+      "date": "2026-09-01",
+      "accounts": {
+        "michael_robinhood_retirement": 176629,
+        "michael_robinhood_taxable": 468822,
+        "michael_fidelity_401k": 298135.99,
+        "chris_robinhood_retirement": 94165.21,
+        "chris_fidelity_401k": 68852.49,
+        "chris_invesco_ira": 11631.95
+      },
+      "home_equity": 646811,
+      "mortgage_balance": 564076,
+      "income": 400000,
+      "expenses": 108000
     }
   ]
 }
