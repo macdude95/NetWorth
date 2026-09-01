@@ -67,7 +67,7 @@ The current build has the gate enabled with the password `vesper`.
     "michael_fidelity_401k": 297426.72,
     "chris_robinhood_retirement": 96626.55,
     "chris_fidelity_401k": 69146.73,
-    "chris_investco_ira": 11636.85
+    "chris_invesco_ira": 11636.85
   },
   "home_equity": 642684.22,
   "mortgage_balance": 565396.78,

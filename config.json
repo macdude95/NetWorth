@@ -5,7 +5,7 @@
     "michael_fidelity_401k": {"bucket": "retirement", "liquid": true},
     "chris_robinhood_retirement": {"bucket": "retirement", "liquid": true},
     "chris_fidelity_401k": {"bucket": "retirement", "liquid": true},
-    "chris_investco_ira": {"bucket": "retirement", "liquid": true}
+    "chris_invesco_ira": {"bucket": "retirement", "liquid": true}
   },
   "projection": {
     "growth_rate": 7,
