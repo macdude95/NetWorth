@@ -20,10 +20,12 @@ Static site, no backend. A Python script reads account data from JSON and genera
 
 ```
 NetWorth/
+├── config.json             # explicit account metadata and projection defaults
 ├── data/
 │   └── snapshots.json      # investment account balances, home equity, mortgage, income, expenses
 ├── templates/
 │   └── index.html          # HTML/JS/CSS template (Chart.js)
+├── docs/vendor/            # pinned local Chart.js dependencies
 ├── docs/
 │   └── index.html          # generated output served by GitHub Pages
 ├── generate.py             # builds docs/index.html from data + template
@@ -44,13 +46,13 @@ python3 verify.py    # runs headless Chromium, checks all charts render
 
 ### Set a password (optional)
 
-The dashboard supports a client-side password gate (SHA-256, feature-flagged off by default):
+The dashboard uses a client-side password gate (SHA-256). This is casual privacy only: the generated HTML contains the data and a password hash, so it is not protection against someone determined to download or brute-force the page.
 
 ```bash
 python3 generate.py --set-password YOUR_PASSWORD
 ```
 
-Then set `password_enabled` to `True` in `generate.py` to enable it.
+The current build has the gate enabled with the password `vesper`.
 
 ## Data model
 
@@ -74,4 +76,4 @@ Then set `password_enabled` to `True` in `generate.py` to enable it.
 }
 ```
 
-Accounts are classified as retirement vs. non-retirement by keyword (`retirement`, `401k`, `ira` in the key name). Home equity and mortgage are tracked separately; liquid net worth excludes both.
+Accounts are classified as retirement vs. non-retirement and included in liquid net worth by explicit metadata in `config.json`. Home equity and mortgage are tracked separately; liquid net worth excludes home equity and mortgage.

@@ -6,13 +6,13 @@ Static web dashboard for tracking and projecting personal net worth. Password-ga
 
 - **URL:** https://macdude95.github.io/NetWorth/
 - **Repo:** https://github.com/macdude95/NetWorth
-- **Password:** disabled for testing — set via `python3 generate.py --set-password PWD` and flip `password_enabled` to `True` in `generate.py`
+- **Password:** `vesper` (client-side casual privacy gate; not suitable for protecting secrets)
 
 ## Architecture
 
 ```
 NetWorth/
-├── config.json          # Account definitions (retirement/non-retirement, liquid/illiquid, growth rates)
+├── config.json          # Account definitions and projection defaults
 ├── data/
 │   └── snapshots.json   # Chronological net worth snapshots (the source of truth)
 ├── templates/
@@ -23,42 +23,38 @@ NetWorth/
 └── REQUIREMENTS.md      # This file
 ```
 
-`generate.py` computes derived series (net worth total, ex-housing, retirement, non-retirement) from raw account snapshots, hashes the password, and injects everything into the template as a `const DATA = {...}` JSON blob. All chart rendering, projections, and milestones run client-side.
+`generate.py` computes derived series (net worth total, liquid, retirement, non-retirement) from raw account snapshots and explicit metadata in `config.json`, hashes the password, and injects everything into the template as a `const DATA = {...}` JSON blob. All chart rendering, projections, and milestones run client-side.
 
 ## Data model
 
 ### `data/snapshots.json`
 
+Each snapshot has a date, account balances, and home equity. Account inclusion and retirement classification come from `config.json`; unconfigured accounts are intentionally excluded. `home_equity` is already net equity, not gross home value, and `mortgage_balance` is retained for ownership milestones. Optional top-level `income` and `expenses` values (annual dollars) feed projection calculations and FIRE milestones.
+
 ```json
 {
-  "snapshots": [
-    {
-      "date": "2026-08-01",
-      "accounts": {
-        "checking": 12500,
-        "hysa": 70000,
-        "brokerage_taxable": 178000,
-        "brokerage_roth": 265000,
-        "retirement_401k": 330000,
-        "home_equity": 475000
-      },
-      "liabilities": {
-        "mortgage_balance": 261000
-      }
-    }
-  ]
+  "date": "2026-08-01",
+  "accounts": {
+    "michael_robinhood_retirement": 184585.27,
+    "michael_robinhood_taxable": 465434.97
+  },
+  "home_equity": 642684.22,
+  "mortgage_balance": 565396.78,
+  "income": 400000,
+  "expenses": 108000
 }
 ```
 
-Each account exists as a key in `accounts`. Liabilities (mortgage) reduce net worth. `home_equity` is net of the mortgage (already equity, not gross value). Optional top-level fields `income` and `expenses` (annual) feed projection calculations and FIRE milestones.
+Checking and savings are not tracked by design. `config.json` is the authoritative source for whether an account is liquid and whether it belongs to retirement or non-retirement.
 
 ### `config.json`
 
 Defines account metadata and projection settings. See file for full schema. Key fields:
 - `accounts.<key>.bucket`: `"retirement"` or `"non_retirement"`
 - `accounts.<key>.liquid`: `true`/`false` (home equity is illiquid)
-- `accounts.<key>.growth_rate`: annual nominal rate for projection defaults
-- `password.hash` + `password.salt`: SHA-256 credentials
+- `projection.*`: editable projection defaults used by the UI
+
+Password credentials are stored in `data/password.json` and injected into the generated page. They provide casual privacy, not security against source inspection or offline brute force.
 
 ## Features
 
@@ -66,12 +62,12 @@ Defines account metadata and projection settings. See file for full schema. Key 
 - Two lines on one chart: total net worth + liquid (excl. home equity)
 - Timeframe toggles: YTD, 1Y, 5Y, All
 
-### 2. Projections (30 years)
+### 2. Projections (1–30 years, default 10)
 - **Inputs:** annual expenses, annual income, investment growth %
-- **Computation:** client-side Monte Carlo (200 runs, 15% annual vol)
-- **Output:** median projection line + p10/p90 shaded band
-- **Model:** net savings (income − expenses) are invested at the given growth rate, starting from current net worth
-- No timeframe toggle — fixed 30-year horizon (like Robinhood Future)
+- **Computation:** deterministic monthly compounding
+- **Output:** stacked current-liquid-investments and future-contributions series
+- **Model:** after-tax income minus expenses is invested monthly at the given growth rate, starting from current liquid net worth
+- Horizon is editable and defaults to 10 years; assumptions persist locally and can be reset.
 
 ### 3. Retirement vs Non-Retirement
 - Stacked bar chart
@@ -94,8 +90,7 @@ Four categories with progress bars and projected cross-dates:
 
 ### 5. Password Gate
 - SHA-256 client-side gate
-- Feature-flagged off (`password_enabled: false`) during development
-- To re-enable: set `password_enabled` to `True` in `generate.py` and rebuild
+- Enabled in the current build for casual privacy only. The source HTML still contains the data and hash.
 
 ### 6. Stats Row
 - Latest net worth with delta from previous snapshot

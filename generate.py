@@ -6,7 +6,7 @@ with Chart.js charts, password gate, and timeframe toggles.
 
 Usage:
   python3 generate.py                      # build with current data
-  python3 generate.py --set-password PWD   # update password hash in config
+  python3 generate.py --set-password PWD  # update data/password.json
 """
 
 import json
@@ -18,6 +18,7 @@ import sys
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(PROJECT_DIR, "templates", "index.html")
 SNAPSHOTS_PATH = os.path.join(PROJECT_DIR, "data", "snapshots.json")
+CONFIG_PATH = os.path.join(PROJECT_DIR, "config.json")
 PASSWORD_PATH = os.path.join(PROJECT_DIR, "data", "password.json")
 OUTPUT_DIR = os.path.join(PROJECT_DIR, "docs")
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "index.html")
@@ -34,32 +35,36 @@ def write_json(path, data):
         f.write("\n")
 
 
-def derive_series(snapshots):
-    """Compute net worth total, ex-housing, retirement, non-retirement per snapshot."""
+def derive_series(snapshots, config):
+    """Compute explicit liquid, retirement, non-retirement, and total series."""
     dates = []
     net_worth_total = []
     net_worth_ex_housing = []
     retirement = []
     non_retirement = []
-
-    # Retirement account keys (contain "retirement" or "401k" or "ira")
-    retirement_keys = [k for k in snapshots[0]["accounts"].keys()
-                       if "retirement" in k or "401k" in k or "ira" in k]
+    account_config = config["accounts"]
 
     for snap in snapshots:
         dates.append(snap["date"])
-        liquid = sum(snap["accounts"].values())
-        ret = sum(snap["accounts"].get(k, 0) for k in retirement_keys)
-        non_ret = liquid - ret
+        liquid = sum(
+            snap.get("accounts", {}).get(key, 0)
+            for key, meta in account_config.items()
+            if meta.get("liquid", False)
+        )
+        ret = sum(
+            snap.get("accounts", {}).get(key, 0)
+            for key, meta in account_config.items()
+            if meta.get("liquid", False) and meta.get("bucket") == "retirement"
+        )
+        non_ret = sum(
+            snap.get("accounts", {}).get(key, 0)
+            for key, meta in account_config.items()
+            if meta.get("liquid", False) and meta.get("bucket") == "non_retirement"
+        )
 
-        nw = liquid
-        if "home_equity" in snap:
-            nw += snap["home_equity"]
-
-        ex_housing = liquid
-
+        nw = liquid + snap.get("home_equity", 0)
         net_worth_total.append(nw)
-        net_worth_ex_housing.append(ex_housing)
+        net_worth_ex_housing.append(liquid)
         retirement.append(ret)
         non_retirement.append(non_ret)
 
@@ -95,8 +100,9 @@ def main():
         return
 
     data = load_json(SNAPSHOTS_PATH)
+    config = load_json(CONFIG_PATH)
     snapshots = data["snapshots"]
-    series = derive_series(snapshots)
+    series = derive_series(snapshots, config)
 
     # Password setup
     pw_data = {"hash": "PLACEHOLDER_HASH", "salt": "PLACEHOLDER_SALT"}
@@ -124,6 +130,7 @@ def main():
         "password": {"hash": stored_hash, "salt": stored_salt},
         "password_enabled": True,
         "tooltip_mode": "dismiss-button",
+        "projection_defaults": config.get("projection", {}),
     }
 
     with open(TEMPLATE_PATH) as f:

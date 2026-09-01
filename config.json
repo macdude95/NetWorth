@@ -1,0 +1,17 @@
+{
+  "accounts": {
+    "michael_robinhood_retirement": {"bucket": "retirement", "liquid": true},
+    "michael_robinhood_taxable": {"bucket": "non_retirement", "liquid": true},
+    "michael_fidelity_401k": {"bucket": "retirement", "liquid": true},
+    "chris_robinhood_retirement": {"bucket": "retirement", "liquid": true},
+    "chris_fidelity_401k": {"bucket": "retirement", "liquid": true},
+    "chris_investco_ira": {"bucket": "retirement", "liquid": true}
+  },
+  "projection": {
+    "growth_rate": 7,
+    "horizon_years": 10,
+    "income_thousands": 400,
+    "tax_rate": 35,
+    "expenses_thousands": 108
+  }
+}

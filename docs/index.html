@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Net Worth Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="vendor/chartjs-plugin-datalabels.min.js"></script>
+  <script src="vendor/chartjs-plugin-annotation.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0d1117; color: #c9d1d9; padding: 12px;
+      background: #000; color: #c9d1d9; padding: 12px;
       min-height: 100vh;
     }
     .container { max-width: 900px; margin: 0 auto; }
@@ -19,7 +19,7 @@
     .subtitle { font-size: 0.8rem; color: #8b949e; margin-bottom: 16px; }
     .section { margin-bottom: 28px; }
     .section h2 { font-size: 1.05rem; color: #f0f6fc; margin-bottom: 10px; border-bottom: 1px solid #21262d; padding-bottom: 4px; }
-    .chart-wrapper { position: relative; width: 100%; background: #161b22; border-radius: 8px; padding: 12px; }
+    .chart-wrapper { position: relative; width: 100%; background: #0b0b0b; border: 1px solid #27231a; border-radius: 8px; padding: 12px; }
     canvas { width: 100% !important; max-height: 350px; }
     .timeframe-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
     .timeframe-bar button {
@@ -27,11 +27,11 @@
       padding: 4px 10px; border-radius: 6px; font-size: 0.78rem; cursor: pointer;
       transition: background 0.15s;
     }
-    .timeframe-bar button.active { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+    .timeframe-bar button.active { background: #C9A961; border-color: #C9A961; color: #000; }
     .timeframe-bar button:hover { background: #30363d; }
     .stats-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
     .stat-box {
-      flex: 1 1 120px; background: #161b22; border-radius: 8px;
+      flex: 1 1 120px; background: #0b0b0b; border: 1px solid #27231a; border-radius: 8px;
       padding: 10px 12px; text-align: center; min-width: 110px;
     }
     .stat-box .label { font-size: 0.7rem; color: #8b949e; text-transform: uppercase; }
@@ -45,17 +45,17 @@
     #gate form { display: flex; flex-direction: column; gap: 10px; align-items: center; max-width: 280px; width: 100%; }
     #gate input[type="password"] {
       width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #30363d;
-      background: #0d1117; color: #f0f6fc; font-size: 1rem; outline: none;
+      background: #000; color: #f0f6fc; font-size: 1rem; outline: none;
     }
-    #gate input[type="password"]:focus { border-color: #1f6feb; }
+    #gate input[type="password"]:focus { border-color: #C9A961; }
     #gate button {
-      width: 100%; padding: 10px; background: #238636; color: #fff;
+      width: 100%; padding: 10px; background: #C9A961; color: #000;
       border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
     }
     #gate .error { color: #f85149; font-size: 0.85rem; margin-top: 4px; min-height: 20px; }
     #dashboard { display: none; }
     .proj-controls {
-      background: #161b22; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
+      background: #0b0b0b; border: 1px solid #27231a; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;
       display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
     }
     .proj-controls label {
@@ -63,12 +63,12 @@
       text-transform: uppercase; min-width: 100px; flex: 1 1 130px;
     }
     .proj-controls input { 
-      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      background: #000; border: 1px solid #30363d; border-radius: 6px;
       padding: 6px 8px; color: #f0f6fc; font-size: 0.85rem; width: 100%;
     }
-    .proj-controls input:focus { border-color: #1f6feb; outline: none; }
+    .proj-controls input:focus { border-color: #C9A961; outline: none; }
     .proj-controls button {
-      background: #238636; color: #fff; border: none; border-radius: 6px;
+      background: #C9A961; color: #000; border: none; border-radius: 6px;
       padding: 6px 14px; font-size: 0.8rem; cursor: pointer; margin-top: 8px;
     .proj-controls button:hover { background: #2ea043; }
     .tt-dismiss {
@@ -86,7 +86,7 @@
       transition: background 0.15s, color 0.15s;
     }
     .seg-control button:first-child { border-right: 1px solid #30363d; }
-    .seg-control button.active { background: #1f6feb; color: #fff; }
+    .seg-control button.active { background: #C9A961; color: #000; }
     .ach-toggle {
       background: #21262d; color: #c9d1d9; border: 1px solid #30363d;
       padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
@@ -125,9 +125,9 @@
 <div id="gate">
   <form onsubmit="event.preventDefault(); checkPassword(); return false;">
     <h1 style="text-align:center;margin-bottom:8px;">🔒 Net Worth</h1>
-    <input type="password" id="pw-input" placeholder="Enter password" autofocus>
+    <input type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password" aria-label="Dashboard password" autofocus>
     <button type="submit">Unlock</button>
-    <div class="error" id="pw-error"></div>
+    <div class="error" id="pw-error" role="alert" aria-live="polite"></div>
   </form>
 </div>
 
@@ -139,19 +139,20 @@
   <div class="section">
     <h2>Net Worth</h2>
     <div class="timeframe-bar" id="timeframeBarNW"></div>
-    <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissNW" onclick="dismissTooltip('nw')" title="Dismiss tooltip">✕</button><canvas id="chartNetWorth"></canvas></div>
+    <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissNW" onclick="dismissTooltip('nw')" aria-label="Dismiss Net Worth tooltip" title="Dismiss tooltip">✕</button><canvas id="chartNetWorth" role="img" aria-label="Net Worth history chart"></canvas></div>
   </div>
 
   <div class="section" id="projectionSection">
     <h2>Projections</h2>
     <div class="proj-controls" id="projControls">
-      <label>Growth <input type="number" id="projGrowth" min="1" max="15" step="0.5" value="7" onchange="recalcProjections()" style="width:55px"> %/yr</label>
-      <label>Horizon <input type="number" id="projHorizon" min="5" max="30" step="5" value="10" onchange="recalcProjections()" style="width:55px"> yr</label>
-      <label>Income <input type="number" id="projIncome" min="50" max="1000" step="5" value="400" onchange="recalcProjections()" style="width:65px"> $K/yr</label>
-      <label>Tax <input type="number" id="projTax" min="0" max="50" step="1" value="35" onchange="recalcProjections()" style="width:50px"> %</label>
-      <label>Expenses <input type="number" id="projExpenses" min="20" max="500" step="1" value="108" onchange="recalcProjections()" style="width:60px"> $K/yr</label>
+      <label>Growth <input type="number" id="projGrowth" min="0" max="15" step="0.5" inputmode="decimal" aria-label="Annual investment growth rate" value="7"> %/yr</label>
+      <label>Horizon <input type="number" id="projHorizon" min="1" max="30" step="1" inputmode="numeric" aria-label="Projection horizon in years" value="10"> yr</label>
+      <label>Income <input type="number" id="projIncome" min="0" max="1000" step="5" inputmode="decimal" aria-label="Gross annual income in thousands" value="400"> $K/yr</label>
+      <label>Tax <input type="number" id="projTax" min="0" max="100" step="1" inputmode="decimal" aria-label="Tax rate" value="35"> %</label>
+      <label>Expenses <input type="number" id="projExpenses" min="0" max="500" step="1" inputmode="decimal" aria-label="Annual expenses in thousands" value="108"> $K/yr</label>
+      <button type="button" onclick="resetProjectionDefaults()">Reset</button>
     </div>
-    <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissProj" onclick="dismissTooltip('projections')" title="Dismiss tooltip">✕</button><canvas id="chartProjections"></canvas></div>
+    <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissProj" onclick="dismissTooltip('projections')" aria-label="Dismiss projections tooltip" title="Dismiss tooltip">✕</button><canvas id="chartProjections" role="img" aria-label="Liquid net worth projection chart"></canvas></div>
   </div>
 
   <div class="section">
@@ -159,15 +160,15 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div class="timeframe-bar" id="timeframeBarStacked" style="margin-bottom:0;"></div>
       <div style="display:flex;border:1px solid #30363d;border-radius:6px;overflow:hidden;flex-shrink:0;">
-        <button id="segBar" onclick="setStackedMode('bar')" style="background:#1f6feb;color:#fff;border:none;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Bar</button>
-        <button id="segPie" onclick="setStackedMode('pie')" style="background:transparent;color:#8b949e;border:none;border-left:1px solid #30363d;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Pie</button>
+        <button id="segBar" aria-pressed="true" onclick="setStackedMode('bar')" style="background:#C9A961;color:#000;border:none;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Bar</button>
+        <button id="segPie" aria-pressed="false" onclick="setStackedMode('pie')" style="background:transparent;color:#8b949e;border:none;border-left:1px solid #30363d;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Pie</button>
       </div>
     </div>
-    <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissStacked" onclick="dismissTooltip('stacked')" title="Dismiss tooltip">✕</button><canvas id="chartStacked"></canvas></div>
+    <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissStacked" onclick="dismissTooltip('stacked')" aria-label="Dismiss retirement tooltip" title="Dismiss tooltip">✕</button><canvas id="chartStacked" role="img" aria-label="Retirement and non-retirement history chart"></canvas></div>
   </div>
 
   <div class="section">
-    <button class="ach-toggle" onclick="toggleAchievements()">
+    <button class="ach-toggle" aria-expanded="false" aria-controls="achPanel" onclick="toggleAchievements()">
       🏆 Achievements <span id="achCaret" style="font-size:0.7rem;">▶</span>
     </button>
     <div id="achPanel" style="display:none;background:#161b22;border-radius:8px;padding:4px 0;margin-top:-4px;" class="chart-wrapper"></div>
@@ -175,7 +176,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12], "non_retirement": [360225.81999999995, 378924.61, 364147.14, 376377.42999999993, 420684.61, 450981.44000000006, 449892.4, 437849.95999999996, 465434.9700000001]}, "current": {"home_equity": 642684.22, "mortgage_balance": 565396.78, "income": 400000, "expenses": 108000}, "password": {"hash": "38e4b15c961f7bcd669f6a51ee52462a4afa56ecbcb2d96741757f4240463897", "salt": "a83e9bc8f5dd4e61ed356b0e125193d5"}, "password_enabled": true, "tooltip_mode": "dismiss-button"};
+const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12], "non_retirement": [360225.82, 378924.61, 364147.14, 376377.43, 420684.61, 450981.44, 449892.4, 437849.96, 465434.97]}, "current": {"home_equity": 642684.22, "mortgage_balance": 565396.78, "income": 400000, "expenses": 108000}, "password": {"hash": "38e4b15c961f7bcd669f6a51ee52462a4afa56ecbcb2d96741757f4240463897", "salt": "a83e9bc8f5dd4e61ed356b0e125193d5"}, "password_enabled": true, "tooltip_mode": "dismiss-button", "projection_defaults": {"growth_rate": 7, "horizon_years": 10, "income_thousands": 400, "tax_rate": 35, "expenses_thousands": 108}};
 Chart.register(ChartDataLabels);
 
 function sha256(str) {
@@ -198,7 +199,7 @@ async function checkPassword() {
 const MODE = DATA.tooltip_mode || 'dismiss-button';
 const CHART_KEYS = ['chartNetWorth','chartProjections','chartStacked'];
 const CHART_MAP = { chartNetWorth:'nw', chartProjections:'projections', chartStacked:'stacked' };
-const CC = { total: '#1f6feb', exHousing: '#3fb950', retirement: '#d29922', nonRetirement: '#58a6ff' };
+const CC = { total: '#C9A961', exHousing: '#8fbf9f', retirement: '#d7a84b', nonRetirement: '#7aa2c8' };
 
 function dismissTooltip(key) {
   var c = charts[key];
@@ -261,7 +262,8 @@ function makeTFBar(parentId, key, labels, redraw) {
   Object.keys(labels).forEach(l => {
     const btn = document.createElement('button');
     btn.textContent = l; btn.className = tfState[key] === l ? 'active' : '';
-    btn.onclick = () => { tfState[key] = l; bar.querySelectorAll('button').forEach(b => b.className = ''); btn.className = 'active'; redraw(); };
+    btn.setAttribute('aria-pressed', tfState[key] === l);
+    btn.onclick = () => { tfState[key] = l; bar.querySelectorAll('button').forEach(b => { b.className = ''; b.setAttribute('aria-pressed', 'false'); }); btn.className = 'active'; btn.setAttribute('aria-pressed', 'true'); redraw(); };
     bar.appendChild(btn);
   });
 }
@@ -271,7 +273,7 @@ function baseOpts() {
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } }, datalabels: { display: false } },
     scales: {
-      x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+      x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8, callback: function(value) { const raw = this.getLabelForValue(value); const d = new Date(raw); return isNaN(d) ? raw : d.toLocaleDateString('en-US', {month:'short', year:'2-digit'}); } } },
       y: { ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(201,209,217,0.1)' }, min: 0 }
     },
     interaction: { intersect: false, mode: 'index' },
@@ -279,6 +281,7 @@ function baseOpts() {
 }
 
 function drawNW() {
+  if (charts.nw) { charts.nw.destroy(); charts.nw = null; }
   const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tfState.nw]);
   charts.nw = new Chart(document.getElementById('chartNetWorth'), {
     type: 'line', data: { labels: f.dates, datasets: [
@@ -322,12 +325,12 @@ function drawProjectionsFn() {
 
   charts.projections = new Chart(document.getElementById('chartProjections'), {
     type: 'line', data: { labels: p.projDates, datasets: [
-      { label: 'Current NW', data: p.existing, borderColor: '#4dabf7', backgroundColor: 'rgba(77,171,247,0.4)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+      { label: 'Current liquid investments', data: p.existing, borderColor: '#4dabf7', backgroundColor: 'rgba(77,171,247,0.4)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
       { label: 'Contributions', data: p.contributions, borderColor: '#69db7c', backgroundColor: 'rgba(105,219,124,0.4)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
     ]}, options: {
       ...baseOpts(),
       scales: {
-        x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8 } },
+        x: { ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 8, callback: function(value) { const raw = this.getLabelForValue(value); const d = new Date(raw); return isNaN(d) ? raw : d.toLocaleDateString('en-US', {month:'short', year:'2-digit'}); } } },
         y: { stacked: true, min: 0, ticks: { color: '#8b949e', font: { size: 10 }, callback: v => fmtShort(v) }, grid: { color: 'rgba(201,209,217,0.1)' } }
       },
       plugins: { ...baseOpts().plugins, annotation: { annotations } },
@@ -336,6 +339,7 @@ function drawProjectionsFn() {
 }
 
 function drawStacked() {
+  if (charts.stacked) { charts.stacked.destroy(); charts.stacked = null; }
   const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tfState.stacked]);
   charts.stacked = new Chart(document.getElementById('chartStacked'), {
     type: 'bar', data: { labels: f.dates, datasets: [
@@ -379,11 +383,13 @@ let stackedMode = 'bar';
 function setStackedMode(mode) {
   if (stackedMode === mode) return;
   stackedMode = mode;
-  document.getElementById('segBar').style.background = mode === 'bar' ? '#1f6feb' : 'transparent';
-  document.getElementById('segBar').style.color = mode === 'bar' ? '#fff' : '#8b949e';
-  document.getElementById('segPie').style.background = mode === 'pie' ? '#1f6feb' : 'transparent';
-  document.getElementById('segPie').style.color = mode === 'pie' ? '#fff' : '#8b949e';
-  document.getElementById('timeframeBarStacked').style.visibility = mode === 'pie' ? 'hidden' : '';
+  document.getElementById('segBar').style.background = mode === 'bar' ? '#C9A961' : 'transparent';
+  document.getElementById('segBar').style.color = mode === 'bar' ? '#000' : '#8b949e';
+  document.getElementById('segPie').style.background = mode === 'pie' ? '#C9A961' : 'transparent';
+  document.getElementById('segPie').style.color = mode === 'pie' ? '#000' : '#8b949e';
+  document.getElementById('segBar').setAttribute('aria-pressed', mode === 'bar');
+  document.getElementById('segPie').setAttribute('aria-pressed', mode === 'pie');
+  document.getElementById('timeframeBarStacked').style.display = mode === 'pie' ? 'none' : '';
   if (mode === 'bar') {
     if (charts.stacked) { charts.stacked.destroy(); charts.stacked = null; }
     drawStacked();
@@ -438,14 +444,32 @@ function calcProjections(income, expenses, taxRate, growthPct, horizonYears) {
 }
 
 function recalcProjections() {
-  const income = parseInt(document.getElementById('projIncome').value) || 400;
-  const taxRate = parseInt(document.getElementById('projTax').value) || 35;
-  const expenses = parseInt(document.getElementById('projExpenses').value) || 108;
-  const growth = parseFloat(document.getElementById('projGrowth').value) || 7;
-  const horizon = parseInt(document.getElementById('projHorizon').value) || 10;
+  const income = Math.max(0, Math.min(1000, parseFloat(document.getElementById('projIncome').value) || 0));
+  const taxRate = Math.max(0, Math.min(100, parseFloat(document.getElementById('projTax').value) || 0));
+  const expenses = Math.max(0, Math.min(500, parseFloat(document.getElementById('projExpenses').value) || 0));
+  const growth = Math.max(0, Math.min(15, parseFloat(document.getElementById('projGrowth').value) || 0));
+  const horizon = Math.max(1, Math.min(30, parseInt(document.getElementById('projHorizon').value) || 1));
+  localStorage.setItem('networth-projection-inputs', JSON.stringify({ income, taxRate, expenses, growth, horizon }));
   projCache = calcProjections(income, expenses, taxRate, growth, horizon);
   drawProjectionsFn();
   buildAchievementPanel();
+}
+
+function resetProjectionDefaults() {
+  localStorage.removeItem('networth-projection-inputs');
+  applyProjectionDefaults();
+  recalcProjections();
+}
+
+function applyProjectionDefaults() {
+  const d = DATA.projection_defaults || {};
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('networth-projection-inputs') || '{}'); } catch (_) {}
+  document.getElementById('projGrowth').value = saved.growth ?? d.growth_rate ?? 7;
+  document.getElementById('projHorizon').value = saved.horizon ?? d.horizon_years ?? 10;
+  document.getElementById('projIncome').value = saved.income ?? d.income_thousands ?? 400;
+  document.getElementById('projTax').value = saved.taxRate ?? d.tax_rate ?? 35;
+  document.getElementById('projExpenses').value = saved.expenses ?? d.expenses_thousands ?? 108;
 }
 
 // --- Milestones ---
@@ -461,7 +485,7 @@ function getCurrentValues() {
 function buildMilestones(proj) {
   const cur = getCurrentValues();
   const c = DATA.current || {};
-  const expenses = c.expenses || 96000;
+  const expenses = c.expenses ?? 96000;
   function findCrossMonth(target) {
     for (let m = 0; m < proj.total.length; m++) { if (proj.total[m] >= target) return m; }
     return -1;
@@ -539,8 +563,12 @@ function buildAchievementPanel() {
 function toggleAchievements() {
   const panel = document.getElementById('achPanel');
   const caret = document.getElementById('achCaret');
-  if (panel.style.display === 'none') { panel.style.display = 'block'; caret.textContent = '\u25bc'; buildAchievementPanel(); }
-  else { panel.style.display = 'none'; caret.textContent = '\u25b6'; }
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  caret.textContent = open ? '▼' : '▶';
+  document.querySelector('.ach-toggle').setAttribute('aria-expanded', open);
+  localStorage.setItem('networth-achievements-open', String(open));
+  if (open) buildAchievementPanel();
 }
 
 // --- Main ---
@@ -568,19 +596,20 @@ function initDashboard() {
     { l: 'Net Worth', v: '$'+fmtShort(nw), d: (deltaNW>=0?'+':'')+'$'+fmtShort(Math.abs(deltaNW))+' ('+(deltaPctNW>=0?'+':'')+deltaPctNW.toFixed(1)+'%)', pos: deltaNW>=0 },
     { l: 'Liquid NW', v: '$'+fmtShort(liquid), d: (deltaLiquid>=0?'+':'')+'$'+fmtShort(Math.abs(deltaLiquid))+' ('+(deltaPctLiquid>=0?'+':'')+deltaPctLiquid.toFixed(1)+'%)', pos: deltaLiquid>=0 },
     { l: 'Retirement', v: '$'+fmtShort(ret), d: (deltaRet>=0?'+':'')+'$'+fmtShort(Math.abs(deltaRet))+' ('+(deltaPctRet>=0?'+':'')+deltaPctRet.toFixed(1)+'%)', pos: deltaRet>=0 },
+    { l: 'Snapshots', v: String(s.dates.length), d: '', pos: true },
   ].map(st => '<div class="stat-box"><div class="label">'+st.l+'</div><div class="value">'+st.v+'</div>'+(st.d?'<div class="delta '+(st.pos?'pos':'neg')+'">'+st.d+'</div>':'')+'</div>').join('');
 
   destroyAllCharts();
   makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
   drawNW();
-  document.getElementById('projGrowth').value = '7';
-  document.getElementById('projHorizon').value = '10';
-  document.getElementById('projIncome').value = '400';
-  document.getElementById('projTax').value = '35';
-  document.getElementById('projExpenses').value = '108';
+  applyProjectionDefaults();
+  ['projGrowth','projHorizon','projIncome','projTax','projExpenses'].forEach(id => {
+    document.getElementById(id).addEventListener('input', recalcProjections);
+  });
   recalcProjections();
   makeTFBar('timeframeBarStacked', 'stacked', TF_MAIN, drawStackedOrPie);
   drawStackedOrPie();
+  if (localStorage.getItem('networth-achievements-open') === 'true') toggleAchievements();
 }
 
 (function() {
