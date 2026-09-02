@@ -57,7 +57,6 @@ Defines account metadata and projection settings. See file for full schema. Key 
 - `retirement_profile.birth_year` and `birth_month`: used to calculate the target month
 - `retirement_profile.fire_multiple`: retirement target multiple used by Coast FIRE (default 25)
 - `retirement_profile.inflation_rate`: annual inflation assumption used for bridge-fund targets (default 3%)
-- `retirement_profile.retirement_access_age`: age when retirement accounts become accessible for the dedicated bridge target (default 59.5)
 
 Password credentials are stored in `data/password.json` and injected into the generated page. They provide casual privacy, not security against source inspection or offline brute force.
 
@@ -95,7 +94,7 @@ Four categories with progress bars and projected cross-dates:
 - **Projection scenarios** provide Conservative, Expected, Optimistic, and Custom modes; detailed inputs are hidden under Advanced settings by default
 - **Achievement cards** include collapsed calculation explanations and distinguish completed, current-focus, and future ladder milestones
 - **FIRE milestones** use 25×, 33×, and 40× expense heuristics (4.0%, 3.0%, and 2.5% withdrawal rates); the UI labels them as planning assumptions rather than guarantees
-- **Bridge targets** use inflation-adjusted monthly withdrawals beginning at the target retirement age, discounted by the selected scenario return; the dedicated access target spans target retirement age to `retirement_access_age` (default 59.5)
+- **Bridge targets** use inflation-adjusted monthly withdrawals and the selected scenario return; the UI also estimates how many years the current non-retirement balance covers under those assumptions
 
 ### 5. Password Gate
 - SHA-256 client-side gate

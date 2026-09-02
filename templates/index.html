@@ -150,8 +150,7 @@
     .achievement-ladder-item.done { color: #69db7c; }
     .achievement-ladder-item.current { color: #d7a84b; border: 1px solid rgba(215,168,75,0.65); font-weight: 700; }
     .achievement-ladder-item.far { color: #8b949e; }
-    .achievement-ladder-item.access { border-left: 2px solid #C9A961; }
-    .achievement-ladder-item.current.access { border: 1px solid #C9A961; border-left-width: 2px; }
+
     .achievement-explainer { margin-top: 9px; color: #8b949e; font-size: 0.68rem; }
     .achievement-explainer summary { cursor: pointer; color: #C9A961; }
     .achievement-explainer p { margin: 5px 0 0; line-height: 1.35; }
@@ -617,18 +616,22 @@ function buildMilestones(proj) {
     }
     return target;
   }
-  const accessAge = Number(profile.retirement_access_age);
-  const accessYears = accessAge > coastAge ? accessAge - coastAge : 0;
-  if (accessYears > 0) {
-    const target = bridgeTargetToday(accessYears);
-    const pct = target > 0 ? cur.nonRetirement / target : 0;
-    milestones.push({ type: 'bridge', isAccessBridge: true, name: 'Bridge to age ' + (accessAge % 1 ? accessAge.toString().replace('.5', '½') : accessAge), value: target, desc: accessYears + ' years from age ' + coastAge + ' to retirement-account access', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
+  let bridgeYearsCovered = 0;
+  if (cur.nonRetirement > 0) {
+    let low = 0, high = 50;
+    for (let i = 0; i < 24; i++) {
+      const mid = (low + high) / 2;
+      if (bridgeTargetToday(mid) <= cur.nonRetirement) low = mid;
+      else high = mid;
+    }
+    bridgeYearsCovered = low;
   }
   [1, 3, 5, 10, 15, 20].forEach(yrs => {
     const target = bridgeTargetToday(yrs);
     const pct = target > 0 ? cur.nonRetirement / target : 0;
     milestones.push({ type: 'bridge', name: yrs + '-year bridge', value: target, desc: yrs + ' years of inflation-adjusted monthly expenses', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
+  DATA.bridgeYearsCovered = bridgeYearsCovered;
   return milestones;
 }
 
@@ -655,8 +658,8 @@ function buildAchievementPanel() {
 
   const explanations = {
     liquid: 'Liquid net worth excludes home equity and mortgage value.',
-    fire: 'Coast FIRE uses retirement assets only and inflates the age-42 target. Lean, Full, and Fat FIRE use 25x, 33x, and 40x expenses (4.0%, 3.0%, and 2.5% withdrawal rates); these are planning heuristics, and retiring at 42 requires a longer-horizon review.',
-    bridge: 'Uses inflation-adjusted monthly expenses from the target retirement age, discounted by the selected scenario return while the remaining bridge balance stays invested.',
+    fire: 'Coast FIRE uses retirement assets only and inflates the age-42 target. Lean, Full, and Fat FIRE use 25x, 33x, and 40x expenses (4.0%, 3.0%, and 2.5% withdrawal rates); these are planning heuristics, not guarantees.',
+    bridge: 'Uses inflation-adjusted monthly expenses and the selected scenario return. At the current non-retirement balance, the modeled bridge covers roughly ' + (Number(DATA.bridgeYearsCovered || 0)).toFixed(1) + ' years.',
     home: 'Home equity is estimated home value minus the remaining mortgage.'
   };
   let html = '<div class="achievement-grid">';
@@ -668,7 +671,9 @@ function buildAchievementPanel() {
     const pct = Math.min(100, Math.max(0, featured.pct * 100));
     const cls = featured.status === 'done' ? 'done' : (featured.status === 'close' ? 'close' : 'far');
     const status = featured.status === 'done' ? 'Complete' : (featured.status === 'close' ? 'Next up' : 'In progress');
-    const desc = featured.desc || ('Target: $' + fmtShort(featured.value));
+    const desc = g.key === 'bridge'
+      ? featured.desc + ' · ~' + Number(DATA.bridgeYearsCovered || 0).toFixed(1) + ' years currently covered'
+      : (featured.desc || ('Target: $' + fmtShort(featured.value)));
     const target = '$' + fmtShort(featured.value);
     const current = '$' + fmtShort(featured.current);
     const dateText = featured.crossDate ? 'Est. ' + featured.crossDate : (featured.status === 'done' ? 'Completed' : 'Not projected yet');
@@ -680,10 +685,10 @@ function buildAchievementPanel() {
     html += '<div class="achievement-card-foot"><span>' + current + ' of ' + target + '</span><span class="' + (dateText === 'Not projected yet' ? 'no-date' : '') + '">' + dateText + '</span></div>';
     html += '<div class="achievement-ladder" aria-label="' + g.title + ' milestones">';
     items.forEach(m => {
-      const itemClass = (m.status === 'done' ? 'done' : (m === featured ? 'current' : 'far')) + (m.isAccessBridge ? ' access' : '');
+        const itemClass = (m.status === 'done' ? 'done' : (m === featured ? 'current' : 'far'));
       const state = m.status === 'done' ? 'Completed' : (m === featured ? 'Current focus' : 'Future milestone');
-      const mark = m.status === 'done' ? '✓' : (m.isAccessBridge ? '↗' : (m === featured ? '◆' : '·'));
-      html += '<span class="achievement-ladder-item ' + itemClass + '" aria-label="' + m.name + ': ' + state + '" title="' + (m.isAccessBridge ? 'Retirement-account access bridge' : state) + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
+      const mark = m.status === 'done' ? '✓' : (m === featured ? '◆' : '·');
+      html += '<span class="achievement-ladder-item ' + itemClass + '" aria-label="' + m.name + ': ' + state + '" title="' + state + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
     });
     html += '</div></article>';
   });

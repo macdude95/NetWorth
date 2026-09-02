@@ -150,8 +150,7 @@
     .achievement-ladder-item.done { color: #69db7c; }
     .achievement-ladder-item.current { color: #d7a84b; border: 1px solid rgba(215,168,75,0.65); font-weight: 700; }
     .achievement-ladder-item.far { color: #8b949e; }
-    .achievement-ladder-item.access { border-left: 2px solid #C9A961; }
-    .achievement-ladder-item.current.access { border: 1px solid #C9A961; border-left-width: 2px; }
+
     .achievement-explainer { margin-top: 9px; color: #8b949e; font-size: 0.68rem; }
     .achievement-explainer summary { cursor: pointer; color: #C9A961; }
     .achievement-explainer p { margin: 5px 0 0; line-height: 1.35; }
@@ -235,7 +234,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31, 1765047.64], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09, 1118236.64], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12, 649414.6399999999], "non_retirement": [360225.82, 378924.61, 364147.14, 376377.43, 420684.61, 450981.44, 449892.4, 437849.96, 465434.97, 468822]}, "current": {"home_equity": 646811, "mortgage_balance": 564076, "income": 400000, "expenses": 108000}, "password": {"hash": "38e4b15c961f7bcd669f6a51ee52462a4afa56ecbcb2d96741757f4240463897", "salt": "a83e9bc8f5dd4e61ed356b0e125193d5"}, "password_enabled": true, "tooltip_mode": "dismiss-button", "projection_defaults": {"growth_rate": 7, "horizon_years": 10, "income_thousands": 400, "tax_rate": 35, "expenses_thousands": 108}, "retirement_profile": {"target_age": 42, "birth_year": 1995, "birth_month": 9, "fire_multiple": 25, "inflation_rate": 3, "retirement_access_age": 59.5}};
+const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31, 1765047.64], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09, 1118236.64], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12, 649414.6399999999], "non_retirement": [360225.82, 378924.61, 364147.14, 376377.43, 420684.61, 450981.44, 449892.4, 437849.96, 465434.97, 468822]}, "current": {"home_equity": 646811, "mortgage_balance": 564076, "income": 400000, "expenses": 108000}, "password": {"hash": "38e4b15c961f7bcd669f6a51ee52462a4afa56ecbcb2d96741757f4240463897", "salt": "a83e9bc8f5dd4e61ed356b0e125193d5"}, "password_enabled": true, "tooltip_mode": "dismiss-button", "projection_defaults": {"growth_rate": 7, "horizon_years": 10, "income_thousands": 400, "tax_rate": 35, "expenses_thousands": 108}, "retirement_profile": {"target_age": 42, "birth_year": 1995, "birth_month": 9, "fire_multiple": 25, "inflation_rate": 3}};
 Chart.register(ChartDataLabels);
 
 function sha256(str) {
@@ -617,18 +616,22 @@ function buildMilestones(proj) {
     }
     return target;
   }
-  const accessAge = Number(profile.retirement_access_age);
-  const accessYears = accessAge > coastAge ? accessAge - coastAge : 0;
-  if (accessYears > 0) {
-    const target = bridgeTargetToday(accessYears);
-    const pct = target > 0 ? cur.nonRetirement / target : 0;
-    milestones.push({ type: 'bridge', isAccessBridge: true, name: 'Bridge to age ' + (accessAge % 1 ? accessAge.toString().replace('.5', '½') : accessAge), value: target, desc: accessYears + ' years from age ' + coastAge + ' to retirement-account access', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
+  let bridgeYearsCovered = 0;
+  if (cur.nonRetirement > 0) {
+    let low = 0, high = 50;
+    for (let i = 0; i < 24; i++) {
+      const mid = (low + high) / 2;
+      if (bridgeTargetToday(mid) <= cur.nonRetirement) low = mid;
+      else high = mid;
+    }
+    bridgeYearsCovered = low;
   }
   [1, 3, 5, 10, 15, 20].forEach(yrs => {
     const target = bridgeTargetToday(yrs);
     const pct = target > 0 ? cur.nonRetirement / target : 0;
     milestones.push({ type: 'bridge', name: yrs + '-year bridge', value: target, desc: yrs + ' years of inflation-adjusted monthly expenses', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
+  DATA.bridgeYearsCovered = bridgeYearsCovered;
   return milestones;
 }
 
@@ -655,8 +658,8 @@ function buildAchievementPanel() {
 
   const explanations = {
     liquid: 'Liquid net worth excludes home equity and mortgage value.',
-    fire: 'Coast FIRE uses retirement assets only and inflates the age-42 target. Lean, Full, and Fat FIRE use 25x, 33x, and 40x expenses (4.0%, 3.0%, and 2.5% withdrawal rates); these are planning heuristics, and retiring at 42 requires a longer-horizon review.',
-    bridge: 'Uses inflation-adjusted monthly expenses from the target retirement age, discounted by the selected scenario return while the remaining bridge balance stays invested.',
+    fire: 'Coast FIRE uses retirement assets only and inflates the age-42 target. Lean, Full, and Fat FIRE use 25x, 33x, and 40x expenses (4.0%, 3.0%, and 2.5% withdrawal rates); these are planning heuristics, not guarantees.',
+    bridge: 'Uses inflation-adjusted monthly expenses and the selected scenario return. At the current non-retirement balance, the modeled bridge covers roughly ' + (Number(DATA.bridgeYearsCovered || 0)).toFixed(1) + ' years.',
     home: 'Home equity is estimated home value minus the remaining mortgage.'
   };
   let html = '<div class="achievement-grid">';
@@ -668,7 +671,9 @@ function buildAchievementPanel() {
     const pct = Math.min(100, Math.max(0, featured.pct * 100));
     const cls = featured.status === 'done' ? 'done' : (featured.status === 'close' ? 'close' : 'far');
     const status = featured.status === 'done' ? 'Complete' : (featured.status === 'close' ? 'Next up' : 'In progress');
-    const desc = featured.desc || ('Target: $' + fmtShort(featured.value));
+    const desc = g.key === 'bridge'
+      ? featured.desc + ' · ~' + Number(DATA.bridgeYearsCovered || 0).toFixed(1) + ' years currently covered'
+      : (featured.desc || ('Target: $' + fmtShort(featured.value)));
     const target = '$' + fmtShort(featured.value);
     const current = '$' + fmtShort(featured.current);
     const dateText = featured.crossDate ? 'Est. ' + featured.crossDate : (featured.status === 'done' ? 'Completed' : 'Not projected yet');
@@ -680,10 +685,10 @@ function buildAchievementPanel() {
     html += '<div class="achievement-card-foot"><span>' + current + ' of ' + target + '</span><span class="' + (dateText === 'Not projected yet' ? 'no-date' : '') + '">' + dateText + '</span></div>';
     html += '<div class="achievement-ladder" aria-label="' + g.title + ' milestones">';
     items.forEach(m => {
-      const itemClass = (m.status === 'done' ? 'done' : (m === featured ? 'current' : 'far')) + (m.isAccessBridge ? ' access' : '');
+        const itemClass = (m.status === 'done' ? 'done' : (m === featured ? 'current' : 'far'));
       const state = m.status === 'done' ? 'Completed' : (m === featured ? 'Current focus' : 'Future milestone');
-      const mark = m.status === 'done' ? '✓' : (m.isAccessBridge ? '↗' : (m === featured ? '◆' : '·'));
-      html += '<span class="achievement-ladder-item ' + itemClass + '" aria-label="' + m.name + ': ' + state + '" title="' + (m.isAccessBridge ? 'Retirement-account access bridge' : state) + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
+      const mark = m.status === 'done' ? '✓' : (m === featured ? '◆' : '·');
+      html += '<span class="achievement-ladder-item ' + itemClass + '" aria-label="' + m.name + ': ' + state + '" title="' + state + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
     });
     html += '</div></article>';
   });
