@@ -150,6 +150,8 @@
     .achievement-ladder-item.done { color: #69db7c; }
     .achievement-ladder-item.current { color: #d7a84b; border: 1px solid rgba(215,168,75,0.65); font-weight: 700; }
     .achievement-ladder-item.far { color: #8b949e; }
+    .achievement-ladder-item.access { border-left: 2px solid #C9A961; }
+    .achievement-ladder-item.current.access { border: 1px solid #C9A961; border-left-width: 2px; }
     .achievement-explainer { margin-top: 9px; color: #8b949e; font-size: 0.68rem; }
     .achievement-explainer summary { cursor: pointer; color: #C9A961; }
     .achievement-explainer p { margin: 5px 0 0; line-height: 1.35; }
@@ -233,7 +235,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31, 1765047.64], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09, 1118236.64], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12, 649414.6399999999], "non_retirement": [360225.82, 378924.61, 364147.14, 376377.43, 420684.61, 450981.44, 449892.4, 437849.96, 465434.97, 468822]}, "current": {"home_equity": 646811, "mortgage_balance": 564076, "income": 400000, "expenses": 108000}, "password": {"hash": "38e4b15c961f7bcd669f6a51ee52462a4afa56ecbcb2d96741757f4240463897", "salt": "a83e9bc8f5dd4e61ed356b0e125193d5"}, "password_enabled": true, "tooltip_mode": "dismiss-button", "projection_defaults": {"growth_rate": 7, "horizon_years": 10, "income_thousands": 400, "tax_rate": 35, "expenses_thousands": 108}, "retirement_profile": {"target_age": 42, "birth_year": 1995, "birth_month": 9, "fire_multiple": 25, "inflation_rate": 3}};
+const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31, 1765047.64], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09, 1118236.64], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12, 649414.6399999999], "non_retirement": [360225.82, 378924.61, 364147.14, 376377.43, 420684.61, 450981.44, 449892.4, 437849.96, 465434.97, 468822]}, "current": {"home_equity": 646811, "mortgage_balance": 564076, "income": 400000, "expenses": 108000}, "password": {"hash": "38e4b15c961f7bcd669f6a51ee52462a4afa56ecbcb2d96741757f4240463897", "salt": "a83e9bc8f5dd4e61ed356b0e125193d5"}, "password_enabled": true, "tooltip_mode": "dismiss-button", "projection_defaults": {"growth_rate": 7, "horizon_years": 10, "income_thousands": 400, "tax_rate": 35, "expenses_thousands": 108}, "retirement_profile": {"target_age": 42, "birth_year": 1995, "birth_month": 9, "fire_multiple": 25, "inflation_rate": 3, "retirement_access_age": 59.5}};
 Chart.register(ChartDataLabels);
 
 function sha256(str) {
@@ -588,30 +590,42 @@ function buildMilestones(proj) {
   const coastMonths = coastValid ? Math.max(0, (coastDate.getUTCFullYear() - snapshotDate.getUTCFullYear()) * 12 + coastDate.getUTCMonth() - snapshotDate.getUTCMonth()) : 0;
   const annualGrowth = Number(proj.annualGrowth || 0) / 100;
   const monthlyGrowth = annualGrowth / 12;
+  const inflationMonthly = Number(profile.inflation_rate ?? 3) / 100 / 12;
   const coastFactor = Math.pow(1 + monthlyGrowth, coastMonths);
-  const coastTarget = expenses * fireMultiple;
+  const coastTarget = expenses * fireMultiple * Math.pow(1 + inflationMonthly, coastMonths);
   const coastRequiredToday = coastFactor > 0 ? coastTarget / coastFactor : coastTarget;
   const coastLabel = coastValid ? 'Coast FIRE · age ' + coastAge : 'Coast FIRE';
   const coastDesc = coastValid ? 'Retirement assets needed today to reach ' + fireMultiple + 'x expenses by age ' + coastAge : 'Retirement assets grow toward financial independence';
   const coastPct = coastRequiredToday > 0 ? cur.retirement / coastRequiredToday : 0;
   milestones.push({ type: 'fire', isCoast: true, name: coastLabel, value: coastRequiredToday, desc: coastDesc, current: cur.retirement, pct: coastPct, crossMonths: coastPct >= 1 ? 0 : -1, crossDate: coastPct >= 1 && coastDate ? coastDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : null, status: coastPct >= 1 ? 'done' : (coastPct >= 0.75 ? 'close' : 'far') });
-  [{ name: 'Lean FIRE', mult: 25, desc: '25x annual expenses' },{ name: 'Full FIRE', mult: 33, desc: '33x expenses (3% SWR)' },{ name: 'Fat FIRE', mult: 40, desc: '40x expenses - luxury forever' }].forEach(ft => {
+  [{ name: 'Lean FIRE', mult: 25, desc: '25x annual expenses · 4.0% withdrawal rate' },{ name: 'Full FIRE', mult: 33, desc: '33x expenses · 3.0% withdrawal rate' },{ name: 'Fat FIRE', mult: 40, desc: '40x expenses · 2.5% withdrawal rate' }].forEach(ft => {
     const target = expenses * ft.mult;
     const pct = cur.liquidNW / target;
     const m = findCrossMonth(target);
     milestones.push({ type: 'fire', name: ft.name, value: target, desc: ft.desc, current: cur.liquidNW, pct, crossMonths: m, crossDate: crossDate(m), status: cur.liquidNW >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
-  const bridgeInflation = Number(profile.inflation_rate ?? 3) / 100 / 12;
+  const bridgeInflation = inflationMonthly;
   const bridgeSnapshotDate = new Date(DATA.series.dates[DATA.series.dates.length - 1] + 'T00:00:00Z');
   const bridgeTargetDate = new Date(Date.UTC(Number(profile.birth_year) + Number(profile.target_age), Number(profile.birth_month) - 1, 1));
   const monthsToRetirement = Number.isFinite(bridgeTargetDate.getTime()) ? Math.max(0, (bridgeTargetDate.getUTCFullYear() - bridgeSnapshotDate.getUTCFullYear()) * 12 + bridgeTargetDate.getUTCMonth() - bridgeSnapshotDate.getUTCMonth()) : 0;
-  [1, 3, 5, 10, 15, 20].forEach(yrs => {
-    const monthlyReturn = Number(proj.annualGrowth || 0) / 100 / 12;
+  const monthlyReturn = Number(proj.annualGrowth || 0) / 100 / 12;
+  function bridgeTargetToday(years) {
     let target = 0;
-    for (let k = 1; k <= yrs * 12; k++) {
+    for (let k = 1; k <= Math.round(years * 12); k++) {
       const withdrawal = expenses / 12 * Math.pow(1 + bridgeInflation, monthsToRetirement + k - 1);
       target += withdrawal / Math.pow(1 + monthlyReturn, monthsToRetirement + k);
     }
+    return target;
+  }
+  const accessAge = Number(profile.retirement_access_age);
+  const accessYears = accessAge > coastAge ? accessAge - coastAge : 0;
+  if (accessYears > 0) {
+    const target = bridgeTargetToday(accessYears);
+    const pct = target > 0 ? cur.nonRetirement / target : 0;
+    milestones.push({ type: 'bridge', isAccessBridge: true, name: 'Bridge to age ' + (accessAge % 1 ? accessAge.toString().replace('.5', '½') : accessAge), value: target, desc: accessYears + ' years from age ' + coastAge + ' to retirement-account access', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
+  }
+  [1, 3, 5, 10, 15, 20].forEach(yrs => {
+    const target = bridgeTargetToday(yrs);
     const pct = target > 0 ? cur.nonRetirement / target : 0;
     milestones.push({ type: 'bridge', name: yrs + '-year bridge', value: target, desc: yrs + ' years of inflation-adjusted monthly expenses', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
@@ -641,7 +655,7 @@ function buildAchievementPanel() {
 
   const explanations = {
     liquid: 'Liquid net worth excludes home equity and mortgage value.',
-    fire: 'Coast FIRE uses retirement assets only; other FIRE targets use liquid net worth and annual expenses.',
+    fire: 'Coast FIRE uses retirement assets only and inflates the age-42 target. Lean, Full, and Fat FIRE use 25x, 33x, and 40x expenses (4.0%, 3.0%, and 2.5% withdrawal rates); these are planning heuristics, and retiring at 42 requires a longer-horizon review.',
     bridge: 'Uses inflation-adjusted monthly expenses from the target retirement age, discounted by the selected scenario return while the remaining bridge balance stays invested.',
     home: 'Home equity is estimated home value minus the remaining mortgage.'
   };
@@ -666,10 +680,10 @@ function buildAchievementPanel() {
     html += '<div class="achievement-card-foot"><span>' + current + ' of ' + target + '</span><span class="' + (dateText === 'Not projected yet' ? 'no-date' : '') + '">' + dateText + '</span></div>';
     html += '<div class="achievement-ladder" aria-label="' + g.title + ' milestones">';
     items.forEach(m => {
-      const itemClass = m.status === 'done' ? 'done' : (m === featured ? 'current' : 'far');
+      const itemClass = (m.status === 'done' ? 'done' : (m === featured ? 'current' : 'far')) + (m.isAccessBridge ? ' access' : '');
       const state = m.status === 'done' ? 'Completed' : (m === featured ? 'Current focus' : 'Future milestone');
-      const mark = m.status === 'done' ? '✓' : (m === featured ? '◆' : '·');
-      html += '<span class="achievement-ladder-item ' + itemClass + '" aria-label="' + m.name + ': ' + state + '" title="' + state + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
+      const mark = m.status === 'done' ? '✓' : (m.isAccessBridge ? '↗' : (m === featured ? '◆' : '·'));
+      html += '<span class="achievement-ladder-item ' + itemClass + '" aria-label="' + m.name + ': ' + state + '" title="' + (m.isAccessBridge ? 'Retirement-account access bridge' : state) + '"><b>' + mark + '</b> ' + m.name.replace(' liquid', '') + '</span>';
     });
     html += '</div></article>';
   });

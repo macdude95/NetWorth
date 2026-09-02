@@ -19,6 +19,7 @@
     "birth_year": 1995,
     "birth_month": 9,
     "fire_multiple": 25,
-    "inflation_rate": 3
+    "inflation_rate": 3,
+    "retirement_access_age": 59.5
   }
 }
