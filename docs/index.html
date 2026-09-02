@@ -233,7 +233,7 @@
 </div>
 
 <script>
-const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31, 1765047.64], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09, 1118236.64], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12, 649414.6399999999], "non_retirement": [360225.82, 378924.61, 364147.14, 376377.43, 420684.61, 450981.44, 449892.4, 437849.96, 465434.97, 468822]}, "current": {"home_equity": 646811, "mortgage_balance": 564076, "income": 400000, "expenses": 108000}, "password": {"hash": "38e4b15c961f7bcd669f6a51ee52462a4afa56ecbcb2d96741757f4240463897", "salt": "a83e9bc8f5dd4e61ed356b0e125193d5"}, "password_enabled": true, "tooltip_mode": "dismiss-button", "projection_defaults": {"growth_rate": 7, "horizon_years": 10, "income_thousands": 400, "tax_rate": 35, "expenses_thousands": 108}, "retirement_profile": {"target_age": 42, "birth_year": 1995, "birth_month": 9, "fire_multiple": 25}};
+const DATA = {"series": {"dates": ["2025-12-01", "2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01", "2026-07-01", "2026-08-01", "2026-09-01"], "net_worth_total": [1478756.92, 1528236.2800000003, 1496818.1099999999, 1530679.3599999999, 1642071.13, 1719610.3599999999, 1721304.1099999999, 1696533.3900000001, 1767541.31, 1765047.64], "net_worth_ex_housing": [870589.0, 915779.9900000001, 880066.0, 909623.99, 1016705.0099999999, 1089926.0, 1087294.0, 1058190.0, 1124857.09, 1118236.64], "retirement": [510363.18000000005, 536855.3800000001, 515918.86, 533246.56, 596020.3999999999, 638944.5599999999, 637401.6, 620340.04, 659422.12, 649414.6399999999], "non_retirement": [360225.82, 378924.61, 364147.14, 376377.43, 420684.61, 450981.44, 449892.4, 437849.96, 465434.97, 468822]}, "current": {"home_equity": 646811, "mortgage_balance": 564076, "income": 400000, "expenses": 108000}, "password": {"hash": "38e4b15c961f7bcd669f6a51ee52462a4afa56ecbcb2d96741757f4240463897", "salt": "a83e9bc8f5dd4e61ed356b0e125193d5"}, "password_enabled": true, "tooltip_mode": "dismiss-button", "projection_defaults": {"growth_rate": 7, "horizon_years": 10, "income_thousands": 400, "tax_rate": 35, "expenses_thousands": 108}, "retirement_profile": {"target_age": 42, "birth_year": 1995, "birth_month": 9, "fire_multiple": 25, "inflation_rate": 3}};
 Chart.register(ChartDataLabels);
 
 function sha256(str) {
@@ -585,7 +585,7 @@ function buildMilestones(proj) {
   const coastValid = coastAge > 0 && birthYear > 0 && birthMonth >= 1 && birthMonth <= 12;
   const coastDate = coastValid ? new Date(Date.UTC(birthYear + coastAge, birthMonth - 1, 1)) : null;
   const snapshotDate = new Date(DATA.series.dates[DATA.series.dates.length - 1] + 'T00:00:00Z');
-  const coastMonths = coastValid ? Math.max(0, (coastDate.getFullYear() - snapshotDate.getFullYear()) * 12 + coastDate.getMonth() - snapshotDate.getMonth()) : 0;
+  const coastMonths = coastValid ? Math.max(0, (coastDate.getUTCFullYear() - snapshotDate.getUTCFullYear()) * 12 + coastDate.getUTCMonth() - snapshotDate.getUTCMonth()) : 0;
   const annualGrowth = Number(proj.annualGrowth || 0) / 100;
   const monthlyGrowth = annualGrowth / 12;
   const coastFactor = Math.pow(1 + monthlyGrowth, coastMonths);
@@ -601,10 +601,19 @@ function buildMilestones(proj) {
     const m = findCrossMonth(target);
     milestones.push({ type: 'fire', name: ft.name, value: target, desc: ft.desc, current: cur.liquidNW, pct, crossMonths: m, crossDate: crossDate(m), status: cur.liquidNW >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
+  const bridgeInflation = Number(profile.inflation_rate ?? 3) / 100 / 12;
+  const bridgeSnapshotDate = new Date(DATA.series.dates[DATA.series.dates.length - 1] + 'T00:00:00Z');
+  const bridgeTargetDate = new Date(Date.UTC(Number(profile.birth_year) + Number(profile.target_age), Number(profile.birth_month) - 1, 1));
+  const monthsToRetirement = Number.isFinite(bridgeTargetDate.getTime()) ? Math.max(0, (bridgeTargetDate.getUTCFullYear() - bridgeSnapshotDate.getUTCFullYear()) * 12 + bridgeTargetDate.getUTCMonth() - bridgeSnapshotDate.getUTCMonth()) : 0;
   [1, 3, 5, 10, 15, 20].forEach(yrs => {
-    const target = expenses * yrs;
-    const pct = cur.nonRetirement / target;
-    milestones.push({ type: 'bridge', name: yrs + '-year bridge', value: target, desc: yrs + ' years of expenses in non-retirement', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
+    const monthlyReturn = Number(proj.annualGrowth || 0) / 100 / 12;
+    let target = 0;
+    for (let k = 1; k <= yrs * 12; k++) {
+      const withdrawal = expenses / 12 * Math.pow(1 + bridgeInflation, monthsToRetirement + k - 1);
+      target += withdrawal / Math.pow(1 + monthlyReturn, monthsToRetirement + k);
+    }
+    const pct = target > 0 ? cur.nonRetirement / target : 0;
+    milestones.push({ type: 'bridge', name: yrs + '-year bridge', value: target, desc: yrs + ' years of inflation-adjusted monthly expenses', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
   return milestones;
 }
@@ -633,7 +642,7 @@ function buildAchievementPanel() {
   const explanations = {
     liquid: 'Liquid net worth excludes home equity and mortgage value.',
     fire: 'Coast FIRE uses retirement assets only; other FIRE targets use liquid net worth and annual expenses.',
-    bridge: 'A bridge fund is non-retirement money available before retirement accounts can be used.',
+    bridge: 'Uses inflation-adjusted monthly expenses from the target retirement age, discounted by the selected scenario return while the remaining bridge balance stays invested.',
     home: 'Home equity is estimated home value minus the remaining mortgage.'
   };
   let html = '<div class="achievement-grid">';

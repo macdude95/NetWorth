@@ -585,7 +585,7 @@ function buildMilestones(proj) {
   const coastValid = coastAge > 0 && birthYear > 0 && birthMonth >= 1 && birthMonth <= 12;
   const coastDate = coastValid ? new Date(Date.UTC(birthYear + coastAge, birthMonth - 1, 1)) : null;
   const snapshotDate = new Date(DATA.series.dates[DATA.series.dates.length - 1] + 'T00:00:00Z');
-  const coastMonths = coastValid ? Math.max(0, (coastDate.getFullYear() - snapshotDate.getFullYear()) * 12 + coastDate.getMonth() - snapshotDate.getMonth()) : 0;
+  const coastMonths = coastValid ? Math.max(0, (coastDate.getUTCFullYear() - snapshotDate.getUTCFullYear()) * 12 + coastDate.getUTCMonth() - snapshotDate.getUTCMonth()) : 0;
   const annualGrowth = Number(proj.annualGrowth || 0) / 100;
   const monthlyGrowth = annualGrowth / 12;
   const coastFactor = Math.pow(1 + monthlyGrowth, coastMonths);
@@ -601,10 +601,19 @@ function buildMilestones(proj) {
     const m = findCrossMonth(target);
     milestones.push({ type: 'fire', name: ft.name, value: target, desc: ft.desc, current: cur.liquidNW, pct, crossMonths: m, crossDate: crossDate(m), status: cur.liquidNW >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
+  const bridgeInflation = Number(profile.inflation_rate ?? 3) / 100 / 12;
+  const bridgeSnapshotDate = new Date(DATA.series.dates[DATA.series.dates.length - 1] + 'T00:00:00Z');
+  const bridgeTargetDate = new Date(Date.UTC(Number(profile.birth_year) + Number(profile.target_age), Number(profile.birth_month) - 1, 1));
+  const monthsToRetirement = Number.isFinite(bridgeTargetDate.getTime()) ? Math.max(0, (bridgeTargetDate.getUTCFullYear() - bridgeSnapshotDate.getUTCFullYear()) * 12 + bridgeTargetDate.getUTCMonth() - bridgeSnapshotDate.getUTCMonth()) : 0;
   [1, 3, 5, 10, 15, 20].forEach(yrs => {
-    const target = expenses * yrs;
-    const pct = cur.nonRetirement / target;
-    milestones.push({ type: 'bridge', name: yrs + '-year bridge', value: target, desc: yrs + ' years of expenses in non-retirement', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
+    const monthlyReturn = Number(proj.annualGrowth || 0) / 100 / 12;
+    let target = 0;
+    for (let k = 1; k <= yrs * 12; k++) {
+      const withdrawal = expenses / 12 * Math.pow(1 + bridgeInflation, monthsToRetirement + k - 1);
+      target += withdrawal / Math.pow(1 + monthlyReturn, monthsToRetirement + k);
+    }
+    const pct = target > 0 ? cur.nonRetirement / target : 0;
+    milestones.push({ type: 'bridge', name: yrs + '-year bridge', value: target, desc: yrs + ' years of inflation-adjusted monthly expenses', current: cur.nonRetirement, pct, crossMonths: -1, crossDate: null, status: cur.nonRetirement >= target ? 'done' : (pct >= 0.75 ? 'close' : 'far') });
   });
   return milestones;
 }
@@ -633,7 +642,7 @@ function buildAchievementPanel() {
   const explanations = {
     liquid: 'Liquid net worth excludes home equity and mortgage value.',
     fire: 'Coast FIRE uses retirement assets only; other FIRE targets use liquid net worth and annual expenses.',
-    bridge: 'A bridge fund is non-retirement money available before retirement accounts can be used.',
+    bridge: 'Uses inflation-adjusted monthly expenses from the target retirement age, discounted by the selected scenario return while the remaining bridge balance stays invested.',
     home: 'Home equity is estimated home value minus the remaining mortgage.'
   };
   let html = '<div class="achievement-grid">';

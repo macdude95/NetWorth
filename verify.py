@@ -141,6 +141,9 @@ def verify():
         check(page.evaluate("DATA.retirement_profile.target_age === 42 && DATA.retirement_profile.birth_year === 1995 && DATA.retirement_profile.birth_month === 9"), "retirement profile is embedded")
         check(page.evaluate("(() => { const m = buildMilestones(projCache).find(x => x.isCoast); const p = DATA.retirement_profile; const months = (p.birth_year + p.target_age - 2026) * 12 + (p.birth_month - 9); const expected = DATA.current.expenses * p.fire_multiple / Math.pow(1 + (projCache.annualGrowth / 100 / 12), months); return !!m && Math.abs(m.value - expected) < 1; })()"), "Coast FIRE uses monthly projection compounding")
         check(page.evaluate("buildMilestones(projCache).some(x => x.isCoast && x.name.includes('age 42'))"), "Coast FIRE has stable identity and target age")
+        check(page.evaluate("(() => { const m = buildMilestones(projCache).find(x => x.name === '5-year bridge'); const p = DATA.retirement_profile; const e = DATA.current.expenses / 12; const r = projCache.annualGrowth / 100 / 12; const i = p.inflation_rate / 100 / 12; const t = (p.birth_year + p.target_age - 2026) * 12 + (p.birth_month - 9); let expected = 0; for (let k = 1; k <= 60; k++) expected += e * Math.pow(1 + i, t + k - 1) / Math.pow(1 + r, t + k); return !!m && Math.abs(m.value - expected) < 1; })()"), "bridge targets use inflation and growth")
+        check(page.locator("text=inflation-adjusted monthly expenses").count() >= 1, "bridge calculation explains inflation assumptions")
+        check(page.locator("text=selected scenario return").count() >= 1, "bridge calculation explains growth assumptions")
         check(page.locator(".ach-table").count() == 0, "legacy achievement table is removed")
         check(page.locator(".stat-box").count() == 4, "stats row includes snapshot count")
         check(

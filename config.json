@@ -18,6 +18,7 @@
     "target_age": 42,
     "birth_year": 1995,
     "birth_month": 9,
-    "fire_multiple": 25
+    "fire_multiple": 25,
+    "inflation_rate": 3
   }
 }
