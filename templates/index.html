@@ -154,6 +154,10 @@
     .achievement-explainer { margin-top: 9px; color: #8b949e; font-size: 0.68rem; }
     .achievement-explainer summary { cursor: pointer; color: #C9A961; }
     .achievement-explainer p { margin: 5px 0 0; line-height: 1.35; }
+    .trophy-case { margin: 0 0 12px; background: #0b0b0b; border: 1px solid #27231a; border-radius: 10px; padding: 9px 12px; }
+    .trophy-case summary { cursor: pointer; color: #C9A961; font-size: 0.78rem; font-weight: 700; }
+    .trophy-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+    .trophy-chip { color: #69db7c; background: rgba(105,219,124,0.08); border: 1px solid rgba(105,219,124,0.3); border-radius: 999px; padding: 4px 8px; font-size: 0.67rem; white-space: nowrap; }
     @media (max-width: 480px) {
       .achievement-grid { grid-template-columns: 1fr; }
       .ach-header { align-items: start; }
@@ -229,6 +233,10 @@
         <span id="achToggleLabel">View details</span><span id="achCaret" aria-hidden="true">↓</span>
       </button>
     </div>
+    <details class="trophy-case" id="trophyCase">
+      <summary id="trophySummary">Trophy case</summary>
+      <div id="trophyGrid" class="trophy-grid" aria-live="polite"></div>
+    </details>
     <div id="achPanel" style="display:none;" aria-live="polite"></div>
   </div>
 </div>
@@ -663,6 +671,15 @@ function buildAchievementPanel() {
   if (!panel) return;
 
   const completed = milestones.filter(m => m.status === 'done').length;
+  const trophySummary = document.getElementById('trophySummary');
+  const trophyGrid = document.getElementById('trophyGrid');
+  if (trophySummary && trophyGrid) {
+    trophySummary.textContent = 'Trophy case · ' + completed + ' collected';
+    const trophyItems = milestones.filter(m => m.status === 'done').sort((a, b) => a.type.localeCompare(b.type) || a.value - b.value);
+    trophyGrid.innerHTML = trophyItems.length
+      ? trophyItems.map(m => '<span class="trophy-chip" title="' + m.name + '">✓ ' + m.name + '</span>').join('')
+      : '<span class="trophy-empty">No achievements collected yet</span>';
+  }
   const pending = milestones.filter(m => m.status !== 'done').sort((a, b) => b.pct - a.pct);
   const summary = document.getElementById('achSummary');
   if (summary) {
@@ -689,7 +706,7 @@ function buildAchievementPanel() {
   };
   let html = '<div class="achievement-grid">';
   groups.forEach(g => {
-    const items = milestones.filter(m => m.type === g.key);
+    const items = milestones.filter(m => m.type === g.key).sort((a, b) => a.value - b.value);
     if (!items.length) return;
     const candidateItems = items;
     const featured = candidateItems.filter(m => m.status !== 'done').sort((a, b) => (a.isCoast ? -1 : b.isCoast ? 1 : b.pct - a.pct))[0] || items[0];
