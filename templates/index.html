@@ -203,8 +203,8 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <div class="timeframe-bar" id="timeframeBarStacked" style="display:none;margin-bottom:0;"></div>
       <div style="display:flex;border:1px solid #30363d;border-radius:6px;overflow:hidden;flex-shrink:0;">
-        <button id="segBar" aria-pressed="false" onclick="setStackedMode('bar')" style="background:transparent;color:#8b949e;border:none;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Bar</button>
-        <button id="segPie" aria-pressed="true" onclick="setStackedMode('pie')" style="background:#C9A961;color:#000;border:none;border-left:1px solid #30363d;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Pie</button>
+        <button id="segPie" aria-pressed="true" onclick="setStackedMode('pie')" style="background:#C9A961;color:#000;border:none;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Pie</button>
+        <button id="segBar" aria-pressed="false" onclick="setStackedMode('bar')" style="background:transparent;color:#8b949e;border:none;border-left:1px solid #30363d;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Bar</button>
       </div>
     </div>
     <div class="chart-change" id="stackedChange" aria-live="polite" style="display:none;"></div>
@@ -222,6 +222,7 @@
         <label>Income <input type="number" id="projIncome" min="0" max="1000" step="5" inputmode="decimal" aria-label="Gross annual income in thousands" value="400"> $K/yr</label>
         <label>Tax <input type="number" id="projTax" min="0" max="100" step="1" inputmode="decimal" aria-label="Tax rate" value="35"> %</label>
         <label>Expenses <input type="number" id="projExpenses" min="0" max="500" step="1" inputmode="decimal" aria-label="Annual expenses in thousands" value="108"> $K/yr</label>
+        <label>Inflation <input type="number" id="projInflation" min="0" max="15" step="0.1" inputmode="decimal" aria-label="Annual inflation rate" value="3"> %/yr</label>
         <button type="button" onclick="resetProjectionDefaults()">Reset</button>
       </div>
     </details>
@@ -248,6 +249,7 @@
 
 <script>
 const DATA = __CHART_DATA_JSON__;
+const DEFAULT_INFLATION = Number(DATA.retirement_profile?.inflation_rate ?? 3);
 Chart.register(ChartDataLabels);
 
 function sha256(str) {
@@ -545,8 +547,10 @@ function recalcProjections(scenarioName) {
   const expenses = Math.max(0, Math.min(500, parseFloat(document.getElementById('projExpenses').value) || 0));
   const growth = Math.max(0, Math.min(15, parseFloat(document.getElementById('projGrowth').value) || 0));
   const horizon = Math.max(1, Math.min(30, parseInt(document.getElementById('projHorizon').value) || 1));
+  const inflation = Math.max(0, Math.min(15, parseFloat(document.getElementById('projInflation').value) || 0));
   const scenario = scenarioName || document.getElementById('projScenario').value || 'custom';
-  localStorage.setItem('networth-projection-inputs', JSON.stringify({ income, taxRate, expenses, growth, horizon, scenario }));
+  DATA.retirement_profile.inflation_rate = inflation;
+  localStorage.setItem('networth-projection-inputs', JSON.stringify({ income, taxRate, expenses, growth, horizon, inflation, scenario }));
   projCache = calcProjections(income, expenses, taxRate, growth, horizon);
   drawProjectionsFn();
   buildAchievementPanel();
@@ -567,6 +571,7 @@ function applyProjectionDefaults() {
   document.getElementById('projIncome').value = saved.income ?? d.income_thousands ?? 400;
   document.getElementById('projTax').value = saved.taxRate ?? d.tax_rate ?? 35;
   document.getElementById('projExpenses').value = saved.expenses ?? d.expenses_thousands ?? 108;
+  document.getElementById('projInflation').value = saved.inflation ?? DEFAULT_INFLATION;
   const savedScenario = saved.scenario || Object.keys(SCENARIOS).find(k => SCENARIOS[k] === Number(document.getElementById('projGrowth').value)) || 'custom';
   document.getElementById('projScenario').value = savedScenario;
 }
@@ -803,7 +808,7 @@ function initDashboard() {
   makeTFBar('timeframeBarNW', 'nw', TF_MAIN, drawNW);
   drawNW();
   applyProjectionDefaults();
-  ['projHorizon','projIncome','projTax','projExpenses'].forEach(id => {
+  ['projHorizon','projIncome','projTax','projExpenses','projInflation'].forEach(id => {
     document.getElementById(id).addEventListener('input', recalcProjections);
   });
   document.getElementById('projGrowth').addEventListener('input', markCustomScenario);

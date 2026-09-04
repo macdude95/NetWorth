@@ -68,7 +68,7 @@ Password credentials are stored in `data/password.json` and injected into the ge
 - Timeframe toggles: 3M, 6M, YTD, 1Y, 5Y, All
 
 ### 2. Projections (1–30 years, default 10)
-- **Inputs:** annual expenses, annual income, investment growth %
+- **Inputs:** annual expenses, annual income, investment growth %, and annual inflation %
 - **Computation:** deterministic monthly compounding
 - **Output:** stacked current-liquid-investments and future-contributions series
 - **Model:** after-tax income minus expenses is invested monthly at the given growth rate, starting from current liquid net worth

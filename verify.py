@@ -79,6 +79,7 @@ def verify():
             check(not page_errors and not console_errors, f"Net Worth {label} timeframe switch has no errors")
         check(page.locator("#nwChange").is_visible() and "Change over selected period" in page.locator("#nwChange").inner_text(), "Net Worth change summary renders")
         check(page.evaluate("document.getElementById('segPie').getAttribute('aria-pressed') === 'true' && !!Chart.getChart(document.getElementById('chartStacked'))"), "Retirement chart defaults to Pie")
+        check(page.evaluate("document.getElementById('segPie').compareDocumentPosition(document.getElementById('segBar')) & Node.DOCUMENT_POSITION_FOLLOWING"), "Pie option precedes Bar option")
         page.locator("#segBar").click()
         page.wait_for_timeout(200)
         check(page.locator("#stackedChange").is_visible(), "Retirement change summary appears in Bar view")
@@ -110,6 +111,8 @@ def verify():
 
         page.locator("#projIncome").fill("500")
         page.locator("#projIncome").dispatch_event("input")
+        page.locator("#projInflation").fill("4.5")
+        page.locator("#projInflation").dispatch_event("input")
         page.wait_for_timeout(200)
         check(
             page.evaluate("!!Chart.getChart(document.getElementById('chartProjections'))"),
@@ -121,9 +124,11 @@ def verify():
         page.click("#gate button[type='submit']")
         page.wait_for_timeout(500)
         check(page.locator("#projIncome").input_value() == "500", "projection inputs persist locally")
+        check(page.locator("#projInflation").input_value() == "4.5", "inflation input persists locally")
         page.locator("#advancedProjection summary").click()
         page.locator("button", has_text="Reset").click()
         check(page.locator("#projIncome").input_value() == "400", "projection inputs reset to defaults")
+        check(page.locator("#projInflation").input_value() == "3", "inflation input resets to default")
         page.locator("#projExpenses").fill("0")
         page.locator("#projExpenses").dispatch_event("input")
         page.wait_for_timeout(200)
