@@ -575,12 +575,25 @@ function buildMilestones(proj) {
   const piPct = cur.liquidNW / piMillion;
   const piCrossMonths = findCrossMonth(piMillion);
   milestones.push({ type: 'fun', name: 'π million liquid', value: piMillion, desc: 'The π milestone · $3,141,592.65 liquid', current: cur.liquidNW, pct: piPct, crossMonths: piCrossMonths, crossDate: crossDate(piCrossMonths), status: cur.liquidNW >= piMillion ? 'done' : (piPct >= 0.75 ? 'close' : 'far') });
+  const phiMillion = ((1 + Math.sqrt(5)) / 2) * 1e6;
+  const phiPct = cur.liquidNW / phiMillion;
+  const phiCrossMonths = findCrossMonth(phiMillion);
+  milestones.push({ type: 'fun', name: 'φ million liquid', value: phiMillion, desc: 'The golden-ratio milestone · $1,618,033.99 liquid', current: cur.liquidNW, pct: phiPct, crossMonths: phiCrossMonths, crossDate: crossDate(phiCrossMonths), status: cur.liquidNW >= phiMillion ? 'done' : (phiPct >= 0.75 ? 'close' : 'far') });
+  const number1234567 = 1234567;
+  const number1234567Pct = cur.liquidNW / number1234567;
+  const number1234567CrossMonths = findCrossMonth(number1234567);
+  milestones.push({ type: 'fun', name: '$1,234,567 liquid', value: number1234567, desc: 'The 1-2-3-4-5-6-7 milestone', current: cur.liquidNW, pct: number1234567Pct, crossMonths: number1234567CrossMonths, crossDate: crossDate(number1234567CrossMonths), status: cur.liquidNW >= number1234567 ? 'done' : (number1234567Pct >= 0.75 ? 'close' : 'far') });
   if (DATA.current && DATA.current.mortgage_balance != null) {
     const totalHome = cur.homeEquity + DATA.current.mortgage_balance;
     [0.50, 0.75, 1.0].forEach(pct => {
       const curPct = totalHome > 0 ? cur.homeEquity / totalHome : 0;
       milestones.push({ type: 'home', name: (pct*100).toFixed(0) + '% home equity', value: totalHome * pct, current: cur.homeEquity, pct: curPct / pct, crossMonths: -1, crossDate: null, status: curPct >= pct ? 'done' : (curPct >= pct*0.75 ? 'close' : 'far') });
     });
+    const mortgageBalance = Number(DATA.current.mortgage_balance);
+    const mortgagePct = mortgageBalance > 0 ? cur.liquidNW / mortgageBalance : 1;
+    milestones.push({ type: 'balance', name: 'Liquid assets exceed mortgage', value: mortgageBalance, desc: 'Current tracked liquid investments exceed the mortgage balance owed', current: cur.liquidNW, pct: mortgagePct, crossMonths: -1, crossDate: null, status: cur.liquidNW >= mortgageBalance ? 'done' : (mortgagePct >= 0.75 ? 'close' : 'far') });
+    const homeEquityPct = cur.homeEquity > 0 ? cur.liquidNW / cur.homeEquity : 1;
+    milestones.push({ type: 'balance', name: 'Investments exceed home equity', value: cur.homeEquity, desc: 'Current tracked liquid investments exceed current home equity', current: cur.liquidNW, pct: homeEquityPct, crossMonths: -1, crossDate: null, status: cur.liquidNW >= cur.homeEquity ? 'done' : (homeEquityPct >= 0.75 ? 'close' : 'far') });
   }
   const profile = DATA.retirement_profile || {};
   const fireMultiple = profile.fire_multiple ?? 25;
@@ -659,14 +672,16 @@ function buildAchievementPanel() {
     { key: 'bridge', title: 'Bridge fund', icon: '→' },
     { key: 'home', title: 'Home equity', icon: '⌂' },
     { key: 'fun', title: 'Fun milestones', icon: 'π' },
+    { key: 'balance', title: 'Balance milestones', icon: '⇄' },
   ];
 
   const explanations = {
-    liquid: 'Liquid net worth excludes home equity and mortgage value.',
+    liquid: 'Liquid net worth excludes home equity and mortgage value. Checking and savings are intentionally excluded; current liquid assets are the tracked investment accounts.',
     fire: 'Coast FIRE uses retirement assets only and inflates the age-42 target. Lean, Full, and Fat FIRE use 25x, 33x, and 40x expenses (4.0%, 3.0%, and 2.5% withdrawal rates); these are planning heuristics, not guarantees.',
     bridge: 'Uses inflation-adjusted monthly expenses and the selected scenario return. At the current non-retirement balance, the modeled bridge covers roughly ' + (Number(DATA.bridgeYearsCovered || 0)).toFixed(1) + ' years.',
     home: 'Home equity is estimated home value minus the remaining mortgage.',
-    fun: 'Just-for-fun milestones use the same liquid net worth and projection calculations as the main tracker.'
+    fun: 'Just-for-fun milestones use the same liquid net worth and projection calculations as the main tracker.',
+    balance: 'These compare current tracked liquid investments with the current mortgage balance owed and current home equity.'
   };
   let html = '<div class="achievement-grid">';
   groups.forEach(g => {

@@ -95,7 +95,8 @@ Four categories with progress bars and projected cross-dates:
 - **Achievement cards** include collapsed calculation explanations and distinguish completed, current-focus, and future ladder milestones
 - **FIRE milestones** use 25×, 33×, and 40× expense heuristics (4.0%, 3.0%, and 2.5% withdrawal rates); the UI labels them as planning assumptions rather than guarantees
 - **Bridge targets** use inflation-adjusted monthly withdrawals and the selected scenario return; the UI also estimates how many years the current non-retirement balance covers under those assumptions
-- **Fun milestones** include a π-million liquid-net-worth target (`Math.PI × $1,000,000`)
+- **Fun milestones** include π-million, golden-ratio-million, and `$1,234,567` liquid-net-worth targets
+- **Balance milestones** compare current tracked liquid investments with the current mortgage balance owed and current home equity
 
 ### 5. Password Gate
 - SHA-256 client-side gate
