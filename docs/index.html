@@ -579,6 +579,10 @@ function buildMilestones(proj) {
   const phiPct = cur.liquidNW / phiMillion;
   const phiCrossMonths = findCrossMonth(phiMillion);
   milestones.push({ type: 'fun', name: 'φ million liquid', value: phiMillion, desc: 'The golden-ratio milestone · $1,618,033.99 liquid', current: cur.liquidNW, pct: phiPct, crossMonths: phiCrossMonths, crossDate: crossDate(phiCrossMonths), status: cur.liquidNW >= phiMillion ? 'done' : (phiPct >= 0.75 ? 'close' : 'far') });
+  const eMillion = Math.E * 1e6;
+  const ePct = cur.liquidNW / eMillion;
+  const eCrossMonths = findCrossMonth(eMillion);
+  milestones.push({ type: 'fun', name: 'e million liquid', value: eMillion, desc: "Euler's-number milestone · $2,718,281.83 liquid", current: cur.liquidNW, pct: ePct, crossMonths: eCrossMonths, crossDate: crossDate(eCrossMonths), status: cur.liquidNW >= eMillion ? 'done' : (ePct >= 0.75 ? 'close' : 'far') });
   const number1234567 = 1234567;
   const number1234567Pct = cur.liquidNW / number1234567;
   const number1234567CrossMonths = findCrossMonth(number1234567);
