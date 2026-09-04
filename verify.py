@@ -68,10 +68,17 @@ def verify():
             page.locator("#ttDismissNW").get_attribute("aria-label"),
             "tooltip dismiss button is accessible",
         )
+        nw_canvas = page.locator("#chartNetWorth")
+        box = nw_canvas.bounding_box()
+        page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+        page.wait_for_timeout(500)
+        check(page.locator("#ttDismissNW").is_visible(), "tooltip appears on chart interaction")
         check(
             page.locator("#ttDismissNW").evaluate("el => el.getBoundingClientRect().width >= 44 && el.getBoundingClientRect().height >= 44"),
             "tooltip dismiss button meets touch target size",
         )
+        page.wait_for_timeout(4500)
+        check(not page.locator("#ttDismissNW").is_visible(), "tooltip auto-dismisses after timeout")
 
         for label in ("3M", "6M", "1Y"):
             page.locator("#timeframeBarNW button", has_text=label).click()

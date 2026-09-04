@@ -83,7 +83,7 @@
     }
     .proj-controls button:hover { background: #2ea043; }
     .tt-dismiss {
-      display: inline-flex; align-items: center; justify-content: center;
+      display: none; align-items: center; justify-content: center;
       position: absolute; top: -52px; right: 0; z-index: 10;
       width: 44px; height: 44px; background: rgba(0,0,0,0.82); color: #C9A961;
       border: 1px solid #C9A961; border-radius: 50%; padding: 0;
@@ -273,8 +273,11 @@ const MODE = DATA.tooltip_mode || 'dismiss-button';
 const CHART_KEYS = ['chartNetWorth','chartProjections','chartStacked'];
 const CHART_MAP = { chartNetWorth:'nw', chartProjections:'projections', chartStacked:'stacked' };
 const CC = { total: '#C9A961', exHousing: '#8fbf9f', retirement: '#d7a84b', nonRetirement: '#7aa2c8' };
+const TOOLTIP_TIMEOUT_MS = 4000;
+const tooltipTimers = {};
 
 function dismissTooltip(key) {
+  if (tooltipTimers[key]) { clearTimeout(tooltipTimers[key]); delete tooltipTimers[key]; }
   var c = charts[key];
   if (!c) return;
   try {
@@ -295,8 +298,20 @@ function updateDismissButtons() {
     var btnMap = { chartNetWorth:'ttDismissNW', chartProjections:'ttDismissProj', chartStacked:'ttDismissStacked' };
     var btn = document.getElementById(btnMap[id]);
     if (btn) {
-      if (active) { btn.classList.add('visible'); anyActive = true; }
-      else btn.classList.remove('visible');
+      if (active) {
+        btn.classList.add('visible'); anyActive = true;
+        if (!tooltipTimers[CHART_MAP[id]]) {
+          const key = CHART_MAP[id];
+          tooltipTimers[key] = setTimeout(function() {
+            delete tooltipTimers[key];
+            dismissTooltip(key);
+          }, TOOLTIP_TIMEOUT_MS);
+        }
+      } else {
+        btn.classList.remove('visible');
+        const key = CHART_MAP[id];
+        if (tooltipTimers[key]) { clearTimeout(tooltipTimers[key]); delete tooltipTimers[key]; }
+      }
     }
   });
 }
