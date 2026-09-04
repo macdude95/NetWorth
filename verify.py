@@ -73,12 +73,13 @@ def verify():
             "tooltip dismiss button meets touch target size",
         )
 
-        page.locator("#timeframeBarNW button", has_text="1Y").click()
-        page.wait_for_timeout(200)
-        check(not page_errors and not console_errors, "Net Worth timeframe switch has no errors")
-        page.locator("#timeframeBarStacked button", has_text="1Y").click()
-        page.wait_for_timeout(200)
-        check(not page_errors and not console_errors, "Retirement timeframe switch has no errors")
+        for label in ("3M", "6M", "1Y"):
+            page.locator("#timeframeBarNW button", has_text=label).click()
+            page.wait_for_timeout(100)
+            check(not page_errors and not console_errors, f"Net Worth {label} timeframe switch has no errors")
+            page.locator("#timeframeBarStacked button", has_text=label).click()
+            page.wait_for_timeout(100)
+            check(not page_errors and not console_errors, f"Retirement {label} timeframe switch has no errors")
 
         page.locator("#segPie").click()
         page.wait_for_timeout(200)

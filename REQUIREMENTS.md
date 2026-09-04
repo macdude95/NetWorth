@@ -64,7 +64,7 @@ Password credentials are stored in `data/password.json` and injected into the ge
 
 ### 1. Net Worth Chart (total + ex-housing)
 - Two lines on one chart: total net worth + liquid (excl. home equity)
-- Timeframe toggles: YTD, 1Y, 5Y, All
+- Timeframe toggles: 3M, 6M, YTD, 1Y, 5Y, All
 
 ### 2. Projections (1–30 years, default 10)
 - **Inputs:** annual expenses, annual income, investment growth %
@@ -75,7 +75,7 @@ Password credentials are stored in `data/password.json` and injected into the ge
 
 ### 3. Retirement vs Non-Retirement
 - Stacked bar chart
-- Timeframe toggles: YTD, 1Y, 5Y, All
+- Timeframe toggles: 3M, 6M, YTD, 1Y, 5Y, All
 
 ### 4. Milestones & Achievements
 

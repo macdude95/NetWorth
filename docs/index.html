@@ -299,7 +299,7 @@ function fmtShort(n) {
   return n.toFixed(0);
 }
 
-const TF_MAIN = { 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
+const TF_MAIN = { '3M': 3, '6M': 6, 'YTD': 'ytd', '1Y': 12, '5Y': 60, 'All': 'all' };
 function filterDates(dates, seriesArr, tf) {
   if (tf === 'all') return { dates, series: seriesArr };
   const lastDate = new Date(dates[dates.length - 1]);
