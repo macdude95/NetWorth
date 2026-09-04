@@ -66,6 +66,7 @@ Password credentials are stored in `data/password.json` and injected into the ge
 - Two lines on one chart: total net worth + liquid (excl. home equity)
 - Show total value change and percent change for the selected timeframe
 - Timeframe toggles: 3M, 6M, YTD, 1Y, 5Y, All
+- Global vertical-scale toggle switches between a tight **Fit** range and a zero-based **0** range
 
 ### 2. Projections (1–30 years, default 10)
 - **Inputs:** annual expenses, annual income, investment growth %, and annual inflation %
