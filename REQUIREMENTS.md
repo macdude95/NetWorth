@@ -96,7 +96,7 @@ Four categories with progress bars and projected cross-dates:
 - **Projection scenarios** provide Conservative, Expected, Optimistic, and Custom modes; detailed inputs are hidden under Advanced settings by default
 - **Achievement cards** include visible percentage-complete progress bars, collapsed calculation explanations, and distinguish completed, current-focus, and future ladder milestones
 - **FIRE milestones** use 25×, 33×, and 40× expense heuristics (4.0%, 3.0%, and 2.5% withdrawal rates); the UI labels them as planning assumptions rather than guarantees
-- **Bridge targets** use inflation-adjusted monthly withdrawals and the selected scenario return; the UI also estimates how many years the current non-retirement balance covers under those assumptions
+- **Bridge targets** use inflation-adjusted monthly withdrawals and the fixed Expected return assumption (7%); the UI also estimates how many years the current non-retirement balance covers under those assumptions
 - **Fun milestones** include π-million, golden-ratio-million, e-million, and `$1,234,567` liquid-net-worth targets
 - **Balance milestones** are bundled into the Home & balance card and compare current tracked liquid investments with the current mortgage balance owed and current home equity
 
