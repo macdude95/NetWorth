@@ -146,6 +146,7 @@ def verify():
 
         page.locator(".ach-toggle").click()
         check(page.locator(".achievement-card").count() == 5, "achievement category cards render")
+        check(page.locator(".achievement-progress-percent").count() == 5 and all("%" in text for text in page.locator(".achievement-progress-percent").all_inner_texts()), "achievement progress percentages render")
         check("complete" in page.locator("#achSummary").inner_text(), "achievement summary renders")
         check(page.locator("#trophyCase").count() == 1 and page.locator("#trophyCase").get_attribute("open") is None, "trophy case starts compact")
         check(page.locator(".achievement-ladder").count() == 5, "achievement milestone ladders render")

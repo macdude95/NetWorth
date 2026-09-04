@@ -94,7 +94,7 @@ Four categories with progress bars and projected cross-dates:
 - **Collapsible achievements panel** (click "🏆 Achievements") with progress bars, estimated cross-dates, and color coding (green = done, amber = close, gray = distant)
 - **FIRE and bridge milestones** recalculate live when expense input changes
 - **Projection scenarios** provide Conservative, Expected, Optimistic, and Custom modes; detailed inputs are hidden under Advanced settings by default
-- **Achievement cards** include collapsed calculation explanations and distinguish completed, current-focus, and future ladder milestones
+- **Achievement cards** include visible percentage-complete progress bars, collapsed calculation explanations, and distinguish completed, current-focus, and future ladder milestones
 - **FIRE milestones** use 25×, 33×, and 40× expense heuristics (4.0%, 3.0%, and 2.5% withdrawal rates); the UI labels them as planning assumptions rather than guarantees
 - **Bridge targets** use inflation-adjusted monthly withdrawals and the selected scenario return; the UI also estimates how many years the current non-retirement balance covers under those assumptions
 - **Fun milestones** include π-million, golden-ratio-million, e-million, and `$1,234,567` liquid-net-worth targets

@@ -141,8 +141,9 @@
     .achievement-status.close { color: #d7a84b; }
     .achievement-status.far { color: #8b949e; }
     .achievement-description { color: #8b949e; font-size: 0.72rem; line-height: 1.35; margin: 10px 0 9px; min-height: 1.9em; }
-    .achievement-progress { height: 8px; background: #21262d; border-radius: 5px; overflow: hidden; }
+    .achievement-progress { position: relative; height: 8px; background: #21262d; border-radius: 5px; overflow: hidden; }
     .achievement-progress-fill { height: 100%; border-radius: 5px; background: #8b949e; }
+    .achievement-progress-percent { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #f0f6fc; font-size: 0.62rem; font-weight: 700; line-height: 1; text-shadow: 0 1px 2px #000; pointer-events: none; }
     .achievement-progress-fill.done { background: #69db7c; }
     .achievement-progress-fill.close { background: #d7a84b; }
     .achievement-card-foot { display: flex; justify-content: space-between; gap: 8px; color: #b8b8b8; font-size: 0.7rem; margin-top: 7px; }
@@ -764,7 +765,7 @@ function buildAchievementPanel() {
     html += '<div class="achievement-card-head"><div><div class="achievement-card-title">' + g.icon + ' ' + g.title + '</div><div class="achievement-card-category">' + (featured.name === g.title ? '' : featured.name) + '</div></div><div class="achievement-status ' + cls + '">' + status + '</div></div>';
     html += '<div class="achievement-description">' + desc + '</div>';
     html += '<details class="achievement-explainer"><summary>How is this calculated?</summary><p>' + explanations[g.key] + '</p></details>';
-    html += '<div class="achievement-progress" role="progressbar" aria-label="' + featured.name + ' progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct.toFixed(0) + '"><div class="achievement-progress-fill ' + cls + '" style="width:' + pct + '%"></div></div>';
+    html += '<div class="achievement-progress" role="progressbar" aria-label="' + featured.name + ' progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct.toFixed(0) + '"><div class="achievement-progress-fill ' + cls + '" style="width:' + pct + '%"></div><span class="achievement-progress-percent">' + pct.toFixed(0) + '%</span></div>';
     html += '<div class="achievement-card-foot"><span>' + current + ' of ' + target + '</span><span class="' + (dateText === 'Not projected yet' ? 'no-date' : '') + '">' + dateText + '</span></div>';
     html += '<div class="achievement-ladder" aria-label="' + g.title + ' milestones">';
     items.forEach(m => {
