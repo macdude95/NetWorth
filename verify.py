@@ -81,7 +81,7 @@ def verify():
         check(not page.locator("#ttDismissNW").is_visible(), "tooltip auto-dismisses after timeout")
 
         check(page.locator("#scaleFit").count() == 1 and page.locator("#scaleZero").count() == 1, "chart scale toggle renders")
-        check(page.locator("#scaleZero").get_attribute("aria-pressed") == "true", "zero-based chart scale is the default")
+        check(page.locator("#scaleFit").get_attribute("aria-pressed") == "true", "fit chart scale is the default")
         page.locator("#scaleFit").click()
         check(page.evaluate("Chart.getChart(document.getElementById('chartNetWorth')).options.scales.y.min === undefined && Chart.getChart(document.getElementById('chartProjections')).options.scales.y.min === undefined && Chart.getChart(document.getElementById('chartNetWorth')).scales.y.min > 0 && Chart.getChart(document.getElementById('chartProjections')).scales.y.min > 0"), "fit chart scale removes zero floor")
         check(page.evaluate("localStorage.getItem('networth-chart-scale') === 'fit'"), "chart scale choice persists")

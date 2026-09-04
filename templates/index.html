@@ -193,7 +193,7 @@
   <h1>💰 Net Worth Dashboard</h1>
   <div class="subtitle" id="dateRange"></div>
   <div class="stats-row" id="statsRow"></div>
-  <div class="chart-scale-control"><span>Vertical scale</span><div class="seg-control" role="group" aria-label="Chart vertical scale"><button id="scaleFit" aria-pressed="false" onclick="setChartScale('fit')">Fit</button><button id="scaleZero" aria-pressed="true" onclick="setChartScale('zero')">0</button></div></div>
+  <div class="chart-scale-control"><span>Vertical scale</span><div class="seg-control" role="group" aria-label="Chart vertical scale"><button id="scaleFit" aria-pressed="true" onclick="setChartScale('fit')">Fit</button><button id="scaleZero" aria-pressed="false" onclick="setChartScale('zero')">0</button></div></div>
 
   <div class="section">
     <h2>Net Worth</h2>
@@ -279,7 +279,7 @@ const CHART_MAP = { chartNetWorth:'nw', chartProjections:'projections', chartSta
 const CC = { total: '#C9A961', exHousing: '#8fbf9f', retirement: '#d7a84b', nonRetirement: '#7aa2c8' };
 const TOOLTIP_TIMEOUT_MS = 4000;
 const tooltipTimers = {};
-let chartScale = localStorage.getItem('networth-chart-scale') || 'zero';
+let chartScale = localStorage.getItem('networth-chart-scale') || 'fit';
 
 function updateChartScaleControls() {
   ['fit', 'zero'].forEach(mode => {
