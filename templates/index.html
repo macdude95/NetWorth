@@ -29,6 +29,9 @@
     }
     .timeframe-bar button.active { background: #C9A961; border-color: #C9A961; color: #000; }
     .timeframe-bar button:hover { background: #30363d; }
+    .chart-change { color: #8b949e; font-size: 0.72rem; margin: -5px 0 10px; }
+    .chart-change .positive { color: #69db7c; }
+    .chart-change .negative { color: #ff7b72; }
     .stats-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
     .stat-box {
       flex: 1 1 120px; background: #0b0b0b; border: 1px solid #27231a; border-radius: 8px;
@@ -191,7 +194,21 @@
   <div class="section">
     <h2>Net Worth</h2>
     <div class="timeframe-bar" id="timeframeBarNW"></div>
+    <div class="chart-change" id="nwChange" aria-live="polite"></div>
     <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissNW" onclick="dismissTooltip('nw')" aria-label="Dismiss Net Worth tooltip" title="Dismiss tooltip">✕</button><canvas id="chartNetWorth" role="img" aria-label="Net Worth history chart"></canvas></div>
+  </div>
+
+  <div class="section">
+    <h2>Retirement vs Non-Retirement</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="timeframe-bar" id="timeframeBarStacked" style="display:none;margin-bottom:0;"></div>
+      <div style="display:flex;border:1px solid #30363d;border-radius:6px;overflow:hidden;flex-shrink:0;">
+        <button id="segBar" aria-pressed="false" onclick="setStackedMode('bar')" style="background:transparent;color:#8b949e;border:none;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Bar</button>
+        <button id="segPie" aria-pressed="true" onclick="setStackedMode('pie')" style="background:#C9A961;color:#000;border:none;border-left:1px solid #30363d;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Pie</button>
+      </div>
+    </div>
+    <div class="chart-change" id="stackedChange" aria-live="polite" style="display:none;"></div>
+    <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissStacked" onclick="dismissTooltip('stacked')" aria-label="Dismiss retirement tooltip" title="Dismiss tooltip">✕</button><canvas id="chartStacked" role="img" aria-label="Retirement and non-retirement history chart"></canvas></div>
   </div>
 
   <div class="section" id="projectionSection">
@@ -209,18 +226,6 @@
       </div>
     </details>
     <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissProj" onclick="dismissTooltip('projections')" aria-label="Dismiss projections tooltip" title="Dismiss tooltip">✕</button><canvas id="chartProjections" role="img" aria-label="Liquid net worth projection chart"></canvas></div>
-  </div>
-
-  <div class="section">
-    <h2>Retirement vs Non-Retirement</h2>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="timeframe-bar" id="timeframeBarStacked" style="margin-bottom:0;"></div>
-      <div style="display:flex;border:1px solid #30363d;border-radius:6px;overflow:hidden;flex-shrink:0;">
-        <button id="segBar" aria-pressed="true" onclick="setStackedMode('bar')" style="background:#C9A961;color:#000;border:none;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Bar</button>
-        <button id="segPie" aria-pressed="false" onclick="setStackedMode('pie')" style="background:transparent;color:#8b949e;border:none;border-left:1px solid #30363d;padding:4px 12px;font-size:0.78rem;cursor:pointer;">Pie</button>
-      </div>
-    </div>
-    <div class="chart-wrapper"><button class="tt-dismiss" id="ttDismissStacked" onclick="dismissTooltip('stacked')" aria-label="Dismiss retirement tooltip" title="Dismiss tooltip">✕</button><canvas id="chartStacked" role="img" aria-label="Retirement and non-retirement history chart"></canvas></div>
   </div>
 
   <div class="section achievements-section">
@@ -334,6 +339,17 @@ function makeTFBar(parentId, key, labels, redraw) {
   });
 }
 
+function updateChangeSummary(id, firstValue, lastValue) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const change = lastValue - firstValue;
+  const pct = firstValue !== 0 ? change / firstValue * 100 : 0;
+  const sign = change >= 0 ? '+' : '-';
+  const pctSign = pct >= 0 ? '+' : '-';
+  const tone = change >= 0 ? 'positive' : 'negative';
+  el.innerHTML = 'Change over selected period: <span class="' + tone + '">' + sign + '$' + fmtShort(Math.abs(change)) + ' (' + pctSign + pct.toFixed(1) + '%)</span>';
+}
+
 function baseOpts() {
   return {
     responsive: true, maintainAspectRatio: false,
@@ -349,6 +365,7 @@ function baseOpts() {
 function drawNW() {
   if (charts.nw) { charts.nw.destroy(); charts.nw = null; }
   const f = filterDates(DATA.series.dates, [DATA.series.net_worth_total, DATA.series.net_worth_ex_housing], TF_MAIN[tfState.nw]);
+  updateChangeSummary('nwChange', f.series[0][0], f.series[0][f.series[0].length - 1]);
   charts.nw = new Chart(document.getElementById('chartNetWorth'), {
     type: 'line', data: { labels: f.dates, datasets: [
       { label: 'Total (incl. home)', data: f.series[0], borderColor: CC.total, backgroundColor: 'rgba(31,111,235,0.1)', fill: true, tension: 0.3, pointRadius: 2, borderWidth: 2 },
@@ -407,6 +424,9 @@ function drawProjectionsFn() {
 function drawStacked() {
   if (charts.stacked) { charts.stacked.destroy(); charts.stacked = null; }
   const f = filterDates(DATA.series.dates, [DATA.series.retirement, DATA.series.non_retirement], TF_MAIN[tfState.stacked]);
+  const firstTotal = f.series[0][0] + f.series[1][0];
+  const lastTotal = f.series[0][f.series[0].length - 1] + f.series[1][f.series[1].length - 1];
+  updateChangeSummary('stackedChange', firstTotal, lastTotal);
   charts.stacked = new Chart(document.getElementById('chartStacked'), {
     type: 'bar', data: { labels: f.dates, datasets: [
       { label: 'Non-Retirement', data: f.series[1], backgroundColor: CC.nonRetirement, borderRadius: 2 },
@@ -437,7 +457,7 @@ function drawPie() {
         tooltip: { callbacks: { label: ctx => '  ' + ctx.label + ': $' + fmtShort(ctx.raw) + ' (' + (ctx.raw/(ret+non)*100).toFixed(0) + '%)' } },
         datalabels: {
           color: '#fff', font: { size: 13, weight: 'bold' },
-          formatter: (v, ctx) => ctx.chart.data.labels[ctx.dataIndex] + '\n$' + fmtShort(v) + '\n' + (v/(ret+non)*100).toFixed(0) + '%',
+          formatter: (v, ctx) => '$' + fmtShort(v) + '\n' + (v/(ret+non)*100).toFixed(0) + '%',
           textAlign: 'center',
         }
       }
@@ -445,7 +465,7 @@ function drawPie() {
   });
 }
 
-let stackedMode = 'bar';
+let stackedMode = 'pie';
 function setStackedMode(mode) {
   if (stackedMode === mode) return;
   stackedMode = mode;
@@ -456,6 +476,7 @@ function setStackedMode(mode) {
   document.getElementById('segBar').setAttribute('aria-pressed', mode === 'bar');
   document.getElementById('segPie').setAttribute('aria-pressed', mode === 'pie');
   document.getElementById('timeframeBarStacked').style.display = mode === 'pie' ? 'none' : '';
+  document.getElementById('stackedChange').style.display = mode === 'pie' ? 'none' : '';
   if (mode === 'bar') {
     if (charts.stacked) { charts.stacked.destroy(); charts.stacked = null; }
     drawStacked();

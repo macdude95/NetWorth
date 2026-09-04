@@ -64,6 +64,7 @@ Password credentials are stored in `data/password.json` and injected into the ge
 
 ### 1. Net Worth Chart (total + ex-housing)
 - Two lines on one chart: total net worth + liquid (excl. home equity)
+- Show total value change and percent change for the selected timeframe
 - Timeframe toggles: 3M, 6M, YTD, 1Y, 5Y, All
 
 ### 2. Projections (1–30 years, default 10)
@@ -74,8 +75,9 @@ Password credentials are stored in `data/password.json` and injected into the ge
 - Horizon is editable and defaults to 10 years; assumptions persist locally and can be reset.
 
 ### 3. Retirement vs Non-Retirement
-- Stacked bar chart
+- Doughnut chart is the default view; stacked bar chart remains available
 - Timeframe toggles: 3M, 6M, YTD, 1Y, 5Y, All
+- Bar view shows total value change and percent change for the selected timeframe
 
 ### 4. Milestones & Achievements
 

@@ -77,6 +77,12 @@ def verify():
             page.locator("#timeframeBarNW button", has_text=label).click()
             page.wait_for_timeout(100)
             check(not page_errors and not console_errors, f"Net Worth {label} timeframe switch has no errors")
+        check(page.locator("#nwChange").is_visible() and "Change over selected period" in page.locator("#nwChange").inner_text(), "Net Worth change summary renders")
+        check(page.evaluate("document.getElementById('segPie').getAttribute('aria-pressed') === 'true' && !!Chart.getChart(document.getElementById('chartStacked'))"), "Retirement chart defaults to Pie")
+        page.locator("#segBar").click()
+        page.wait_for_timeout(200)
+        check(page.locator("#stackedChange").is_visible(), "Retirement change summary appears in Bar view")
+        for label in ("3M", "6M", "1Y"):
             page.locator("#timeframeBarStacked button", has_text=label).click()
             page.wait_for_timeout(100)
             check(not page_errors and not console_errors, f"Retirement {label} timeframe switch has no errors")
