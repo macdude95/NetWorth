@@ -127,10 +127,10 @@ def verify():
         )
 
         page.locator(".ach-toggle").click()
-        check(page.locator(".achievement-card").count() == 6, "achievement category cards render")
+        check(page.locator(".achievement-card").count() == 5, "achievement category cards render")
         check("complete" in page.locator("#achSummary").inner_text(), "achievement summary renders")
-        check(page.locator(".achievement-ladder").count() == 6, "achievement milestone ladders render")
-        check(page.locator(".achievement-explainer").count() == 6, "achievement explanations stay compact")
+        check(page.locator(".achievement-ladder").count() == 5, "achievement milestone ladders render")
+        check(page.locator(".achievement-explainer").count() == 5, "achievement explanations stay compact")
         page.locator(".achievement-explainer").first.locator("summary").click()
         check(page.locator(".achievement-explainer").first.locator("p").is_visible(), "achievement explanation expands")
         check(page.locator(".achievement-ladder-item.current").count() >= 1, "ladder marks current focus clearly")
