@@ -54,6 +54,10 @@ python3 generate.py --set-password YOUR_PASSWORD
 
 The current build has the gate enabled with the password `vesper`.
 
+## Latest snapshot
+
+The November 1, 2026 snapshot uses Michael's supplied Robinhood taxable/Roth split and Fidelity balance, and Chris's supplied Robinhood, Fidelity, and Invesco balances. Michael's later aggregate Robinhood screenshot value is intentionally not substituted for the confirmed split. Home equity uses Bank of America's estimated home value minus the October 26 statement principal balance; this is an estimate, not an appraisal. Income and expenses are carried forward unchanged. No October snapshot was supplied or interpolated.
+
 ## Data model
 
 `data/snapshots.json` holds monthly snapshots. Each snapshot:
