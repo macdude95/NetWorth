@@ -56,7 +56,9 @@ The current build has the gate enabled with the password `vesper`.
 
 ## Latest snapshot
 
-The November 1, 2026 snapshot uses Michael's supplied Robinhood taxable/Roth split and Fidelity balance, and Chris's supplied Robinhood, Fidelity, and Invesco balances. Michael's later aggregate Robinhood screenshot value is intentionally not substituted for the confirmed split. Home equity uses Bank of America's estimated home value minus the October 26 statement principal balance; this is an estimate, not an appraisal. Income and expenses are carried forward unchanged. No October snapshot was supplied or interpolated.
+The November 1, 2026 snapshot uses Michael's supplied Robinhood taxable/Roth split and Fidelity balance, and Chris's supplied Robinhood, Fidelity, and Invesco balances. Michael's later aggregate Robinhood screenshot value is intentionally not substituted for the confirmed split. Home equity uses Bank of America's estimated home value minus the October 26 statement principal balance; this is an estimate, not an appraisal. Income and expenses are carried forward unchanged. September was restored from its original September 1 commit (`834aaa0`). October uses the actual October 1 updates through `a273041`, which had mistakenly overwritten September. November remains unchanged. `python3 -m unittest test_snapshot_history.py` checks these recovered snapshots against their reported balances.
+
+For monthly updates, append a new dated snapshot rather than overwriting the prior month. Check conversation timestamps and Git history before concluding that a missing month was never supplied.
 
 ## Data model
 
